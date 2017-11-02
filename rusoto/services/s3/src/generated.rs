@@ -12,8 +12,10 @@
 // =================================================================
 
 #[allow(warnings)]
+use futures::future;
+use futures::{Future, Poll, Stream};
 use hyper::Client;
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use rusoto_core::request::DispatchSignedRequest;
 use rusoto_core::region;
 
@@ -978,25 +980,20 @@ impl AnalyticsS3ExportFileFormatSerializer {
     }
 }
 
-pub struct StreamingBody(Box<Read>);
+pub struct StreamingBody<B, E>(Box<Stream<Item=B, Error=E> + Send>);
 
-impl fmt::Debug for StreamingBody {
+impl<B, E> fmt::Debug for StreamingBody<B, E> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<Body: streaming content>")
     }
 }
 
-impl ::std::ops::Deref for StreamingBody {
-    type Target = Box<Read>;
+impl<B, E> Stream for StreamingBody<B, E> {
+    type Item = B;
+    type Error = E;
 
-    fn deref(&self) -> &Box<Read> {
-        &self.0
-    }
-}
-
-impl ::std::ops::DerefMut for StreamingBody {
-    fn deref_mut(&mut self) -> &mut Box<Read> {
-        &mut self.0
+    fn poll(&mut self) -> Poll<Option<B>, E> {
+        self.0.poll()
     }
 }
 
@@ -4648,10 +4645,10 @@ pub struct GetObjectAclRequest {
 }
 
 #[derive(Default,Debug)]
-pub struct GetObjectOutput {
+pub struct GetObjectOutput<B> {
     pub accept_ranges: Option<String>,
     #[doc="Object data."]
-    pub body: Option<StreamingBody>,
+    pub body: Option<StreamingBody<B, GetObjectError>>,
     #[doc="Specifies caching behavior along the request/reply chain."]
     pub cache_control: Option<String>,
     #[doc="Specifies presentational information for the object."]
@@ -4797,8 +4794,8 @@ pub struct GetObjectTaggingRequest {
 }
 
 #[derive(Default,Debug)]
-pub struct GetObjectTorrentOutput {
-    pub body: Option<StreamingBody>,
+pub struct GetObjectTorrentOutput<B> {
+    pub body: Option<StreamingBody<B, GetObjectTorrentError>>,
     pub request_charged: Option<String>,
 }
 
@@ -18155,9 +18152,9 @@ impl Error for UploadPartCopyError {
     }
 }
 /// Trait representing the capabilities of the Amazon S3 API. Amazon S3 clients implement this trait.
-pub trait S3 {
+pub trait S3<B> {
     #[doc="Retrieves objects from Amazon S3."]
-    fn get_object(&self, input: &GetObjectRequest) -> Result<GetObjectOutput, GetObjectError>;
+    fn get_object(&self, input: &GetObjectRequest) -> Box<Future<Item=GetObjectOutput<B>, Error=GetObjectError>>;
 }
 /// A client for the Amazon S3 API.
 pub struct S3Client<P, D>
@@ -18182,13 +18179,14 @@ impl<P, D> S3Client<P, D>
     }
 }
 
-impl<P, D> S3 for S3Client<P, D>
+impl<P, D> S3<D::Chunk> for S3Client<P, D>
     where P: ProvideAwsCredentials,
-          D: DispatchSignedRequest
+          D: DispatchSignedRequest,
+          D::Chunk: Extend<<D::Chunk as IntoIterator>::Item> + IntoIterator + Default + AsRef<[u8]> + 'static
 {
     #[doc="Retrieves objects from Amazon S3."]
     #[allow(unused_variables, warnings)]
-    fn get_object(&self, input: &GetObjectRequest) -> Result<GetObjectOutput, GetObjectError> {
+    fn get_object(&self, input: &GetObjectRequest) -> Box<Future<Item=GetObjectOutput<D::Chunk>, Error=GetObjectError>> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -18259,152 +18257,155 @@ impl<P, D> S3 for S3Client<P, D>
         }
         request.set_params(params);
 
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            },
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
 
-        request.sign(&try!(self.credentials_provider.credentials()));
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+            match response.status {
+                StatusCode::Ok |
+                StatusCode::NoContent |
+                StatusCode::PartialContent => {
+                    let mut result = GetObjectOutput::default();
+                    result.body = Some(StreamingBody(Box::new(response.body.map_err(|err| err.into()))));
 
-        let mut response = try!(self.dispatcher.dispatch(&request));
-
-        match response.status {
-            StatusCode::Ok |
-            StatusCode::NoContent |
-            StatusCode::PartialContent => {
-
-
-
-                let mut result = GetObjectOutput::default();
-                result.body = Some(StreamingBody(response.body));
-
-                if let Some(accept_ranges) = response.headers.get("accept-ranges") {
-                    let value = accept_ranges.to_owned();
-                    result.accept_ranges = Some(value)
-                };
-                if let Some(cache_control) = response.headers.get("Cache-Control") {
-                    let value = cache_control.to_owned();
-                    result.cache_control = Some(value)
-                };
-                if let Some(content_disposition) = response.headers.get("Content-Disposition") {
-                    let value = content_disposition.to_owned();
-                    result.content_disposition = Some(value)
-                };
-                if let Some(content_encoding) = response.headers.get("Content-Encoding") {
-                    let value = content_encoding.to_owned();
-                    result.content_encoding = Some(value)
-                };
-                if let Some(content_language) = response.headers.get("Content-Language") {
-                    let value = content_language.to_owned();
-                    result.content_language = Some(value)
-                };
-                if let Some(content_length) = response.headers.get("Content-Length") {
-                    let value = content_length.to_owned();
-                    result.content_length = Some(value.parse::<i64>().unwrap())
-                };
-                if let Some(content_range) = response.headers.get("Content-Range") {
-                    let value = content_range.to_owned();
-                    result.content_range = Some(value)
-                };
-                if let Some(content_type) = response.headers.get("Content-Type") {
-                    let value = content_type.to_owned();
-                    result.content_type = Some(value)
-                };
-                if let Some(delete_marker) = response.headers.get("x-amz-delete-marker") {
-                    let value = delete_marker.to_owned();
-                    result.delete_marker = Some(value.parse::<bool>().unwrap())
-                };
-                if let Some(e_tag) = response.headers.get("ETag") {
-                    let value = e_tag.to_owned();
-                    result.e_tag = Some(value)
-                };
-                if let Some(expiration) = response.headers.get("x-amz-expiration") {
-                    let value = expiration.to_owned();
-                    result.expiration = Some(value)
-                };
-                if let Some(expires) = response.headers.get("Expires") {
-                    let value = expires.to_owned();
-                    result.expires = Some(value)
-                };
-                if let Some(last_modified) = response.headers.get("Last-Modified") {
-                    let value = last_modified.to_owned();
-                    result.last_modified = Some(value)
-                };
-                let mut values = ::std::collections::HashMap::new();
-                for (key, value) in response.headers.iter() {
-                    if key.starts_with("x-amz-meta-") {
-                        values.insert(key.replace("x-amz-meta-", ""), value.to_owned());
+                    if let Some(accept_ranges) = response.headers.get("accept-ranges") {
+                        let value = accept_ranges.to_owned();
+                        result.accept_ranges = Some(value)
+                    };
+                    if let Some(cache_control) = response.headers.get("Cache-Control") {
+                        let value = cache_control.to_owned();
+                        result.cache_control = Some(value)
+                    };
+                    if let Some(content_disposition) = response.headers.get("Content-Disposition") {
+                        let value = content_disposition.to_owned();
+                        result.content_disposition = Some(value)
+                    };
+                    if let Some(content_encoding) = response.headers.get("Content-Encoding") {
+                        let value = content_encoding.to_owned();
+                        result.content_encoding = Some(value)
+                    };
+                    if let Some(content_language) = response.headers.get("Content-Language") {
+                        let value = content_language.to_owned();
+                        result.content_language = Some(value)
+                    };
+                    if let Some(content_length) = response.headers.get("Content-Length") {
+                        let value = content_length.to_owned();
+                        result.content_length = Some(value.parse::<i64>().unwrap())
+                    };
+                    if let Some(content_range) = response.headers.get("Content-Range") {
+                        let value = content_range.to_owned();
+                        result.content_range = Some(value)
+                    };
+                    if let Some(content_type) = response.headers.get("Content-Type") {
+                        let value = content_type.to_owned();
+                        result.content_type = Some(value)
+                    };
+                    if let Some(delete_marker) = response.headers.get("x-amz-delete-marker") {
+                        let value = delete_marker.to_owned();
+                        result.delete_marker = Some(value.parse::<bool>().unwrap())
+                    };
+                    if let Some(e_tag) = response.headers.get("ETag") {
+                        let value = e_tag.to_owned();
+                        result.e_tag = Some(value)
+                    };
+                    if let Some(expiration) = response.headers.get("x-amz-expiration") {
+                        let value = expiration.to_owned();
+                        result.expiration = Some(value)
+                    };
+                    if let Some(expires) = response.headers.get("Expires") {
+                        let value = expires.to_owned();
+                        result.expires = Some(value)
+                    };
+                    if let Some(last_modified) = response.headers.get("Last-Modified") {
+                        let value = last_modified.to_owned();
+                        result.last_modified = Some(value)
+                    };
+                    let mut values = ::std::collections::HashMap::new();
+                    for (key, value) in response.headers.iter() {
+                        if key.starts_with("x-amz-meta-") {
+                            values.insert(key.replace("x-amz-meta-", ""), value.to_owned());
+                        }
                     }
-                }
-                result.metadata = Some(values);
-                if let Some(missing_meta) = response.headers.get("x-amz-missing-meta") {
-                    let value = missing_meta.to_owned();
-                    result.missing_meta = Some(value.parse::<i64>().unwrap())
-                };
-                if let Some(parts_count) = response.headers.get("x-amz-mp-parts-count") {
-                    let value = parts_count.to_owned();
-                    result.parts_count = Some(value.parse::<i64>().unwrap())
-                };
-                if let Some(replication_status) =
+                    result.metadata = Some(values);
+                    if let Some(missing_meta) = response.headers.get("x-amz-missing-meta") {
+                        let value = missing_meta.to_owned();
+                        result.missing_meta = Some(value.parse::<i64>().unwrap())
+                    };
+                    if let Some(parts_count) = response.headers.get("x-amz-mp-parts-count") {
+                        let value = parts_count.to_owned();
+                        result.parts_count = Some(value.parse::<i64>().unwrap())
+                    };
+                    if let Some(replication_status) =
                     response.headers.get("x-amz-replication-status") {
-                    let value = replication_status.to_owned();
-                    result.replication_status = Some(value)
-                };
-                if let Some(request_charged) = response.headers.get("x-amz-request-charged") {
-                    let value = request_charged.to_owned();
-                    result.request_charged = Some(value)
-                };
-                if let Some(restore) = response.headers.get("x-amz-restore") {
-                    let value = restore.to_owned();
-                    result.restore = Some(value)
-                };
-                if let Some(sse_customer_algorithm) =
+                        let value = replication_status.to_owned();
+                        result.replication_status = Some(value)
+                    };
+                    if let Some(request_charged) = response.headers.get("x-amz-request-charged") {
+                        let value = request_charged.to_owned();
+                        result.request_charged = Some(value)
+                    };
+                    if let Some(restore) = response.headers.get("x-amz-restore") {
+                        let value = restore.to_owned();
+                        result.restore = Some(value)
+                    };
+                    if let Some(sse_customer_algorithm) =
                     response
                         .headers
                         .get("x-amz-server-side-encryption-customer-algorithm") {
-                    let value = sse_customer_algorithm.to_owned();
-                    result.sse_customer_algorithm = Some(value)
-                };
-                if let Some(sse_customer_key_md5) =
+                        let value = sse_customer_algorithm.to_owned();
+                        result.sse_customer_algorithm = Some(value)
+                    };
+                    if let Some(sse_customer_key_md5) =
                     response
                         .headers
                         .get("x-amz-server-side-encryption-customer-key-MD5") {
-                    let value = sse_customer_key_md5.to_owned();
-                    result.sse_customer_key_md5 = Some(value)
-                };
-                if let Some(ssekms_key_id) =
+                        let value = sse_customer_key_md5.to_owned();
+                        result.sse_customer_key_md5 = Some(value)
+                    };
+                    if let Some(ssekms_key_id) =
                     response
                         .headers
                         .get("x-amz-server-side-encryption-aws-kms-key-id") {
-                    let value = ssekms_key_id.to_owned();
-                    result.ssekms_key_id = Some(value)
-                };
-                if let Some(server_side_encryption) =
+                        let value = ssekms_key_id.to_owned();
+                        result.ssekms_key_id = Some(value)
+                    };
+                    if let Some(server_side_encryption) =
                     response.headers.get("x-amz-server-side-encryption") {
-                    let value = server_side_encryption.to_owned();
-                    result.server_side_encryption = Some(value)
-                };
-                if let Some(storage_class) = response.headers.get("x-amz-storage-class") {
-                    let value = storage_class.to_owned();
-                    result.storage_class = Some(value)
-                };
-                if let Some(tag_count) = response.headers.get("x-amz-tagging-count") {
-                    let value = tag_count.to_owned();
-                    result.tag_count = Some(value.parse::<i64>().unwrap())
-                };
-                if let Some(version_id) = response.headers.get("x-amz-version-id") {
-                    let value = version_id.to_owned();
-                    result.version_id = Some(value)
-                };
-                if let Some(website_redirect_location) =
+                        let value = server_side_encryption.to_owned();
+                        result.server_side_encryption = Some(value)
+                    };
+                    if let Some(storage_class) = response.headers.get("x-amz-storage-class") {
+                        let value = storage_class.to_owned();
+                        result.storage_class = Some(value)
+                    };
+                    if let Some(tag_count) = response.headers.get("x-amz-tagging-count") {
+                        let value = tag_count.to_owned();
+                        result.tag_count = Some(value.parse::<i64>().unwrap())
+                    };
+                    if let Some(version_id) = response.headers.get("x-amz-version-id") {
+                        let value = version_id.to_owned();
+                        result.version_id = Some(value)
+                    };
+                    if let Some(website_redirect_location) =
                     response.headers.get("x-amz-website-redirect-location") {
-                    let value = website_redirect_location.to_owned();
-                    result.website_redirect_location = Some(value)
-                };
-                Ok(result)
+                        let value = website_redirect_location.to_owned();
+                        result.website_redirect_location = Some(value)
+                    };
+                    future::Either::A(future::ok(result))
+                }
+                _ => {
+                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                        Err(GetObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                    }))
+                }
             }
-            _ => {
-                let mut body: Vec<u8> = Vec::new();
-                try!(response.body.read_to_end(&mut body));
-                Err(GetObjectError::from_body(String::from_utf8_lossy(&body).as_ref()))
-            }
-        }
+        }))
     }
 }
 

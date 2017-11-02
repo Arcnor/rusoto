@@ -43,7 +43,7 @@ pub struct HttpResponse<B> {
     /// Status code of HTTP Request
     pub status: StatusCode,
     /// Contents of Response
-    pub body: Box<Stream<Item=B, Error=HttpDispatchError>>,
+    pub body: Box<Stream<Item=B, Error=HttpDispatchError> + Send>,
     /// Headers stored as <key(string):value(string)>
     pub headers: HashMap<String, String>,
 }
