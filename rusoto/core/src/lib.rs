@@ -40,8 +40,9 @@
 //!     },
 //! }
 
+extern crate futures;
 extern crate hyper;
-extern crate hyper_native_tls;
+extern crate hyper_tls;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -52,6 +53,7 @@ extern crate base64;
 pub extern crate rusoto_credential as credential;
 extern crate serde;
 extern crate time;
+extern crate tokio_core;
 extern crate url;
 extern crate xml;
 
