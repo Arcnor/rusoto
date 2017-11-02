@@ -114,15 +114,15 @@ fn generate<P, E>(writer: &mut FileWriter,
         // =================================================================
 
         #[allow(warnings)]
-        use hyper::Client;
-        use hyper::status::StatusCode;
+        use futures::future;
+        use futures::{{Future, Stream}};
+        use hyper::StatusCode;
         use rusoto_core::request::DispatchSignedRequest;
         use rusoto_core::region;
 
         use std::fmt;
         use std::error::Error;
         use std::io;
-        use std::io::Read;
         use rusoto_core::request::HttpDispatchError;
         use rusoto_core::credential::{{CredentialsError, ProvideAwsCredentials}};
     ")?;
@@ -176,7 +176,7 @@ fn generate_client<P>(writer: &mut FileWriter,
             }}
         }}
 
-        impl<P, D> {trait_name} for {type_name}<P, D> where P: ProvideAwsCredentials, D: DispatchSignedRequest {{
+        impl<P, D> {trait_name} for {type_name}<P, D> where P: ProvideAwsCredentials, D: DispatchSignedRequest, D::Chunk: Extend<<D::Chunk as IntoIterator>::Item> + IntoIterator + Default + AsRef<[u8]> + 'static {{
         ",
         service_name = service.name(),
         type_name = service.client_type_name(),
