@@ -12,15 +12,15 @@
 // =================================================================
 
 #[allow(warnings)]
-use hyper::Client;
-use hyper::status::StatusCode;
+use futures::future;
+use futures::{Future, Stream};
+use hyper::StatusCode;
 use rusoto_core::request::DispatchSignedRequest;
 use rusoto_core::region;
 
 use std::fmt;
 use std::error::Error;
 use std::io;
-use std::io::Read;
 use rusoto_core::request::HttpDispatchError;
 use rusoto_core::credential::{CredentialsError, ProvideAwsCredentials};
 
@@ -2897,7 +2897,7 @@ pub trait DynamodbAccelerator {
     #[doc="<p>Modifies an existing subnet group.</p>"]
     fn update_subnet_group(&self,
                            input: &UpdateSubnetGroupRequest)
-                           -> Result<UpdateSubnetGroupResponse, UpdateSubnetGroupError>;
+                           -> Box<Future<Item=UpdateSubnetGroupResponse, Error=UpdateSubnetGroupError>>;
 }
 /// A client for the Amazon DAX API.
 pub struct DynamodbAcceleratorClient<P, D>
@@ -2924,12 +2924,13 @@ impl<P, D> DynamodbAcceleratorClient<P, D>
 
 impl<P, D> DynamodbAccelerator for DynamodbAcceleratorClient<P, D>
     where P: ProvideAwsCredentials,
-          D: DispatchSignedRequest
+          D: DispatchSignedRequest,
+          D::Chunk: Extend<<D::Chunk as IntoIterator>::Item> + IntoIterator + Default + AsRef<[u8]> + 'static
 {
     #[doc="<p>Modifies an existing subnet group.</p>"]
     fn update_subnet_group(&self,
                            input: &UpdateSubnetGroupRequest)
-                           -> Result<UpdateSubnetGroupResponse, UpdateSubnetGroupError> {
+                           -> Box<Future<Item=UpdateSubnetGroupResponse, Error=UpdateSubnetGroupError>> {
         let mut request = SignedRequest::new("POST", "dax", &self.region, "/");
 
         request.set_content_type("application/x-amz-json-1.1".to_owned());
@@ -2937,22 +2938,29 @@ impl<P, D> DynamodbAccelerator for DynamodbAcceleratorClient<P, D>
         let encoded = serde_json::to_string(input).unwrap();
         request.set_payload(Some(encoded.into_bytes()));
 
-        request.sign(&try!(self.credentials_provider.credentials()));
-
-        let mut response = try!(self.dispatcher.dispatch(&request));
-
-        match response.status {
-            StatusCode::Ok => {
-                let mut body: Vec<u8> = Vec::new();
-                try!(response.body.read_to_end(&mut body));
-                Ok(serde_json::from_str::<UpdateSubnetGroupResponse>(String::from_utf8_lossy(&body).as_ref()).unwrap())
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            },
+            Ok(credentials) => {
+                request.sign(&credentials);
             }
-            _ => {
-                let mut body: Vec<u8> = Vec::new();
-                try!(response.body.read_to_end(&mut body));
-                Err(UpdateSubnetGroupError::from_body(String::from_utf8_lossy(&body).as_ref()))
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+            match response.status {
+                StatusCode::Ok => {
+                    future::Either::A(response.body.concat2().map_err(|err| err.into()).map(|body| {
+                        serde_json::from_str::<UpdateSubnetGroupResponse>(String::from_utf8_lossy(body.as_ref()).as_ref()).unwrap()
+                    }))
+                }
+                _ => {
+                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                        Err(UpdateSubnetGroupError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                    }))
+                }
             }
-        }
+        }))
     }
 }
 

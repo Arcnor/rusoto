@@ -15,6 +15,7 @@
 //!
 //! If you're using the service, you're probably looking for [DynamodbAcceleratorClient](struct.DynamodbAcceleratorClient.html) and [DynamodbAccelerator](trait.DynamodbAccelerator.html).
 
+extern crate futures;
 extern crate hyper;
 extern crate rusoto_core;
 extern crate serde;
