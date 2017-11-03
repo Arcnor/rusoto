@@ -276,7 +276,7 @@ fn generate_payload_member_serialization(shape: &Shape) -> String {
 fn generate_method_signature(operation_name: &str, operation: &Operation, is_streaming: bool) -> String {
     if operation.input.is_some() {
         format!(
-            "fn {operation_name}(&self, input: &{input_type}) -> Box<Future<Item={output_type}{output_type_appendix}, Error={error_type}>>",
+            "fn {operation_name}(&self, input: &{input_type}) -> Box<Future<Item={output_type}{output_type_appendix}, Error={error_type}> + 'static>",
             input_type = operation.input.as_ref().unwrap().shape,
             operation_name = operation_name.to_snake_case(),
             output_type = &operation.output_shape_or("()"),
@@ -285,7 +285,7 @@ fn generate_method_signature(operation_name: &str, operation: &Operation, is_str
         )
     } else {
         format!(
-            "fn {operation_name}(&self) -> Box<Future<Item={output_type}{output_type_appendix}, Error={error_type}>>",
+            "fn {operation_name}(&self) -> Box<Future<Item={output_type}{output_type_appendix}, Error={error_type}> + 'static>",
             operation_name = operation_name.to_snake_case(),
             error_type = error_type_name(operation_name),
             output_type = &operation.output_shape_or("()"),

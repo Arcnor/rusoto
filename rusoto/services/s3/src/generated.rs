@@ -18152,462 +18152,449 @@ impl Error for UploadPartCopyError {
 /// Trait representing the capabilities of the Amazon S3 API. Amazon S3 clients implement this trait.
 pub trait S3<D: DispatchSignedRequest> {
     #[doc="<p>Aborts a multipart upload.</p><p>To verify that all parts have been removed, so you don't get charged for the part storage, you should call the List Parts operation and ensure the parts list is empty.</p>"]
-    fn abort_multipart_upload
-        (&self,
-         input: &AbortMultipartUploadRequest)
-         -> Box<Future<Item = AbortMultipartUploadOutput, Error = AbortMultipartUploadError>>;
+    fn abort_multipart_upload(&self, input: &AbortMultipartUploadRequest) -> Box<Future<Item=AbortMultipartUploadOutput, Error=AbortMultipartUploadError> + 'static>;
 
 
     #[doc="Completes a multipart upload by assembling previously uploaded parts."]
-    fn complete_multipart_upload
-        (&self,
-         input: &CompleteMultipartUploadRequest)
-         -> Box<Future<Item = CompleteMultipartUploadOutput, Error = CompleteMultipartUploadError>>;
+    fn complete_multipart_upload(&self, input: &CompleteMultipartUploadRequest) -> Box<Future<Item=CompleteMultipartUploadOutput, Error=CompleteMultipartUploadError> + 'static>;
 
 
     #[doc="Creates a copy of an object that is already stored in Amazon S3."]
     fn copy_object(&self,
                    input: &CopyObjectRequest)
-                   -> Box<Future<Item = CopyObjectOutput, Error = CopyObjectError>>;
+                   -> Box<Future<Item = CopyObjectOutput, Error = CopyObjectError> + 'static>;
 
 
     #[doc="Creates a new bucket."]
-    fn create_bucket(&self,
-                     input: &CreateBucketRequest)
-                     -> Box<Future<Item = CreateBucketOutput, Error = CreateBucketError>>;
+    fn create_bucket
+        (&self,
+         input: &CreateBucketRequest)
+         -> Box<Future<Item = CreateBucketOutput, Error = CreateBucketError> + 'static>;
 
 
     #[doc="<p>Initiates a multipart upload and returns an upload ID.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
-    fn create_multipart_upload
-        (&self,
-         input: &CreateMultipartUploadRequest)
-         -> Box<Future<Item = CreateMultipartUploadOutput, Error = CreateMultipartUploadError>>;
+    fn create_multipart_upload(&self, input: &CreateMultipartUploadRequest) -> Box<Future<Item=CreateMultipartUploadOutput, Error=CreateMultipartUploadError> + 'static>;
 
 
     #[doc="Deletes the bucket. All objects (including all object versions and Delete Markers) in the bucket must be deleted before the bucket itself can be deleted."]
     fn delete_bucket(&self,
                      input: &DeleteBucketRequest)
-                     -> Box<Future<Item = (), Error = DeleteBucketError>>;
+                     -> Box<Future<Item = (), Error = DeleteBucketError> + 'static>;
 
 
     #[doc="Deletes an analytics configuration for the bucket (specified by the analytics configuration ID)."]
     fn delete_bucket_analytics_configuration
         (&self,
          input: &DeleteBucketAnalyticsConfigurationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketAnalyticsConfigurationError>>;
+         -> Box<Future<Item = (), Error = DeleteBucketAnalyticsConfigurationError> + 'static>;
 
 
     #[doc="Deletes the cors configuration information set for the bucket."]
     fn delete_bucket_cors(&self,
                           input: &DeleteBucketCorsRequest)
-                          -> Box<Future<Item = (), Error = DeleteBucketCorsError>>;
+                          -> Box<Future<Item = (), Error = DeleteBucketCorsError> + 'static>;
 
 
     #[doc="Deletes an inventory configuration (identified by the inventory ID) from the bucket."]
     fn delete_bucket_inventory_configuration
         (&self,
          input: &DeleteBucketInventoryConfigurationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketInventoryConfigurationError>>;
+         -> Box<Future<Item = (), Error = DeleteBucketInventoryConfigurationError> + 'static>;
 
 
     #[doc="Deletes the lifecycle configuration from the bucket."]
-    fn delete_bucket_lifecycle(&self,
-                               input: &DeleteBucketLifecycleRequest)
-                               -> Box<Future<Item = (), Error = DeleteBucketLifecycleError>>;
+    fn delete_bucket_lifecycle
+        (&self,
+         input: &DeleteBucketLifecycleRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketLifecycleError> + 'static>;
 
 
     #[doc="Deletes a metrics configuration (specified by the metrics configuration ID) from the bucket."]
     fn delete_bucket_metrics_configuration
         (&self,
          input: &DeleteBucketMetricsConfigurationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketMetricsConfigurationError>>;
+         -> Box<Future<Item = (), Error = DeleteBucketMetricsConfigurationError> + 'static>;
 
 
     #[doc="Deletes the policy from the bucket."]
-    fn delete_bucket_policy(&self,
-                            input: &DeleteBucketPolicyRequest)
-                            -> Box<Future<Item = (), Error = DeleteBucketPolicyError>>;
+    fn delete_bucket_policy
+        (&self,
+         input: &DeleteBucketPolicyRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketPolicyError> + 'static>;
 
 
     #[doc="Deletes the replication configuration from the bucket."]
     fn delete_bucket_replication
         (&self,
          input: &DeleteBucketReplicationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketReplicationError>>;
+         -> Box<Future<Item = (), Error = DeleteBucketReplicationError> + 'static>;
 
 
     #[doc="Deletes the tags from the bucket."]
-    fn delete_bucket_tagging(&self,
-                             input: &DeleteBucketTaggingRequest)
-                             -> Box<Future<Item = (), Error = DeleteBucketTaggingError>>;
+    fn delete_bucket_tagging
+        (&self,
+         input: &DeleteBucketTaggingRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketTaggingError> + 'static>;
 
 
     #[doc="This operation removes the website configuration from the bucket."]
-    fn delete_bucket_website(&self,
-                             input: &DeleteBucketWebsiteRequest)
-                             -> Box<Future<Item = (), Error = DeleteBucketWebsiteError>>;
+    fn delete_bucket_website
+        (&self,
+         input: &DeleteBucketWebsiteRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketWebsiteError> + 'static>;
 
 
     #[doc="Removes the null version (if there is one) of an object and inserts a delete marker, which becomes the latest version of the object. If there isn't a null version, Amazon S3 does not remove any objects."]
-    fn delete_object(&self,
-                     input: &DeleteObjectRequest)
-                     -> Box<Future<Item = DeleteObjectOutput, Error = DeleteObjectError>>;
+    fn delete_object
+        (&self,
+         input: &DeleteObjectRequest)
+         -> Box<Future<Item = DeleteObjectOutput, Error = DeleteObjectError> + 'static>;
 
 
     #[doc="Removes the tag-set from an existing object."]
-    fn delete_object_tagging
-        (&self,
-         input: &DeleteObjectTaggingRequest)
-         -> Box<Future<Item = DeleteObjectTaggingOutput, Error = DeleteObjectTaggingError>>;
+    fn delete_object_tagging(&self, input: &DeleteObjectTaggingRequest) -> Box<Future<Item=DeleteObjectTaggingOutput, Error=DeleteObjectTaggingError> + 'static>;
 
 
     #[doc="This operation enables you to delete multiple objects from a bucket using a single HTTP request. You may specify up to 1000 keys."]
-    fn delete_objects(&self,
-                      input: &DeleteObjectsRequest)
-                      -> Box<Future<Item = DeleteObjectsOutput, Error = DeleteObjectsError>>;
+    fn delete_objects
+        (&self,
+         input: &DeleteObjectsRequest)
+         -> Box<Future<Item = DeleteObjectsOutput, Error = DeleteObjectsError> + 'static>;
 
 
     #[doc="Returns the accelerate configuration of a bucket."]
-    fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigurationRequest) -> Box<Future<Item=GetBucketAccelerateConfigurationOutput, Error=GetBucketAccelerateConfigurationError>>;
+    fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigurationRequest) -> Box<Future<Item=GetBucketAccelerateConfigurationOutput, Error=GetBucketAccelerateConfigurationError> + 'static>;
 
 
     #[doc="Gets the access control policy for the bucket."]
-    fn get_bucket_acl(&self,
-                      input: &GetBucketAclRequest)
-                      -> Box<Future<Item = GetBucketAclOutput, Error = GetBucketAclError>>;
+    fn get_bucket_acl
+        (&self,
+         input: &GetBucketAclRequest)
+         -> Box<Future<Item = GetBucketAclOutput, Error = GetBucketAclError> + 'static>;
 
 
     #[doc="Gets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
-    fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigurationRequest) -> Box<Future<Item=GetBucketAnalyticsConfigurationOutput, Error=GetBucketAnalyticsConfigurationError>>;
+    fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigurationRequest) -> Box<Future<Item=GetBucketAnalyticsConfigurationOutput, Error=GetBucketAnalyticsConfigurationError> + 'static>;
 
 
     #[doc="Returns the cors configuration for the bucket."]
-    fn get_bucket_cors(&self,
-                       input: &GetBucketCorsRequest)
-                       -> Box<Future<Item = GetBucketCorsOutput, Error = GetBucketCorsError>>;
+    fn get_bucket_cors
+        (&self,
+         input: &GetBucketCorsRequest)
+         -> Box<Future<Item = GetBucketCorsOutput, Error = GetBucketCorsError> + 'static>;
 
 
     #[doc="Returns an inventory configuration (identified by the inventory ID) from the bucket."]
-    fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigurationRequest) -> Box<Future<Item=GetBucketInventoryConfigurationOutput, Error=GetBucketInventoryConfigurationError>>;
+    fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigurationRequest) -> Box<Future<Item=GetBucketInventoryConfigurationOutput, Error=GetBucketInventoryConfigurationError> + 'static>;
 
 
     #[doc="Deprecated, see the GetBucketLifecycleConfiguration operation."]
     fn get_bucket_lifecycle
         (&self,
          input: &GetBucketLifecycleRequest)
-         -> Box<Future<Item = GetBucketLifecycleOutput, Error = GetBucketLifecycleError>>;
+         -> Box<Future<Item = GetBucketLifecycleOutput, Error = GetBucketLifecycleError> + 'static>;
 
 
     #[doc="Returns the lifecycle configuration information set on the bucket."]
-    fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigurationRequest) -> Box<Future<Item=GetBucketLifecycleConfigurationOutput, Error=GetBucketLifecycleConfigurationError>>;
+    fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigurationRequest) -> Box<Future<Item=GetBucketLifecycleConfigurationOutput, Error=GetBucketLifecycleConfigurationError> + 'static>;
 
 
     #[doc="Returns the region the bucket resides in."]
     fn get_bucket_location
         (&self,
          input: &GetBucketLocationRequest)
-         -> Box<Future<Item = GetBucketLocationOutput, Error = GetBucketLocationError>>;
+         -> Box<Future<Item = GetBucketLocationOutput, Error = GetBucketLocationError> + 'static>;
 
 
     #[doc="Returns the logging status of a bucket and the permissions users have to view and modify that status. To use GET, you must be the bucket owner."]
     fn get_bucket_logging
         (&self,
          input: &GetBucketLoggingRequest)
-         -> Box<Future<Item = GetBucketLoggingOutput, Error = GetBucketLoggingError>>;
+         -> Box<Future<Item = GetBucketLoggingOutput, Error = GetBucketLoggingError> + 'static>;
 
 
     #[doc="Gets a metrics configuration (specified by the metrics configuration ID) from the bucket."]
-    fn get_bucket_metrics_configuration(&self,
-                                        input: &GetBucketMetricsConfigurationRequest)
-                                        -> Box<Future<Item = GetBucketMetricsConfigurationOutput,
-                                                      Error = GetBucketMetricsConfigurationError>>;
+    fn get_bucket_metrics_configuration(&self, input: &GetBucketMetricsConfigurationRequest) -> Box<Future<Item=GetBucketMetricsConfigurationOutput, Error=GetBucketMetricsConfigurationError> + 'static>;
 
 
     #[doc="Deprecated, see the GetBucketNotificationConfiguration operation."]
-    fn get_bucket_notification
-        (&self,
-         input: &GetBucketNotificationConfigurationRequest)
-         -> Box<Future<Item = NotificationConfigurationDeprecated,
-                       Error = GetBucketNotificationError>>;
+    fn get_bucket_notification(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfigurationDeprecated, Error=GetBucketNotificationError> + 'static>;
 
 
     #[doc="Returns the notification configuration of a bucket."]
-    fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfiguration, Error=GetBucketNotificationConfigurationError>>;
+    fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfiguration, Error=GetBucketNotificationConfigurationError> + 'static>;
 
 
     #[doc="Returns the policy of a specified bucket."]
     fn get_bucket_policy
         (&self,
          input: &GetBucketPolicyRequest)
-         -> Box<Future<Item = GetBucketPolicyOutput, Error = GetBucketPolicyError>>;
+         -> Box<Future<Item = GetBucketPolicyOutput, Error = GetBucketPolicyError> + 'static>;
 
 
     #[doc="Returns the replication configuration of a bucket."]
-    fn get_bucket_replication
-        (&self,
-         input: &GetBucketReplicationRequest)
-         -> Box<Future<Item = GetBucketReplicationOutput, Error = GetBucketReplicationError>>;
+    fn get_bucket_replication(&self, input: &GetBucketReplicationRequest) -> Box<Future<Item=GetBucketReplicationOutput, Error=GetBucketReplicationError> + 'static>;
 
 
     #[doc="Returns the request payment configuration of a bucket."]
-    fn get_bucket_request_payment
-        (&self,
-         input: &GetBucketRequestPaymentRequest)
-         -> Box<Future<Item = GetBucketRequestPaymentOutput, Error = GetBucketRequestPaymentError>>;
+    fn get_bucket_request_payment(&self, input: &GetBucketRequestPaymentRequest) -> Box<Future<Item=GetBucketRequestPaymentOutput, Error=GetBucketRequestPaymentError> + 'static>;
 
 
     #[doc="Returns the tag set associated with the bucket."]
     fn get_bucket_tagging
         (&self,
          input: &GetBucketTaggingRequest)
-         -> Box<Future<Item = GetBucketTaggingOutput, Error = GetBucketTaggingError>>;
+         -> Box<Future<Item = GetBucketTaggingOutput, Error = GetBucketTaggingError> + 'static>;
 
 
     #[doc="Returns the versioning state of a bucket."]
-    fn get_bucket_versioning
-        (&self,
-         input: &GetBucketVersioningRequest)
-         -> Box<Future<Item = GetBucketVersioningOutput, Error = GetBucketVersioningError>>;
+    fn get_bucket_versioning(&self, input: &GetBucketVersioningRequest) -> Box<Future<Item=GetBucketVersioningOutput, Error=GetBucketVersioningError> + 'static>;
 
 
     #[doc="Returns the website configuration for a bucket."]
     fn get_bucket_website
         (&self,
          input: &GetBucketWebsiteRequest)
-         -> Box<Future<Item = GetBucketWebsiteOutput, Error = GetBucketWebsiteError>>;
+         -> Box<Future<Item = GetBucketWebsiteOutput, Error = GetBucketWebsiteError> + 'static>;
 
 
     #[doc="Retrieves objects from Amazon S3."]
-    fn get_object(&self,
-                  input: &GetObjectRequest)
-                  -> Box<Future<Item = GetObjectOutput<D::Chunk>, Error = GetObjectError>>;
+    fn get_object
+        (&self,
+         input: &GetObjectRequest)
+         -> Box<Future<Item = GetObjectOutput<D::Chunk>, Error = GetObjectError> + 'static>;
 
 
     #[doc="Returns the access control list (ACL) of an object."]
-    fn get_object_acl(&self,
-                      input: &GetObjectAclRequest)
-                      -> Box<Future<Item = GetObjectAclOutput, Error = GetObjectAclError>>;
+    fn get_object_acl
+        (&self,
+         input: &GetObjectAclRequest)
+         -> Box<Future<Item = GetObjectAclOutput, Error = GetObjectAclError> + 'static>;
 
 
     #[doc="Returns the tag-set of an object."]
     fn get_object_tagging
         (&self,
          input: &GetObjectTaggingRequest)
-         -> Box<Future<Item = GetObjectTaggingOutput, Error = GetObjectTaggingError>>;
+         -> Box<Future<Item = GetObjectTaggingOutput, Error = GetObjectTaggingError> + 'static>;
 
 
     #[doc="Return torrent files from a bucket."]
-    fn get_object_torrent
-        (&self,
-         input: &GetObjectTorrentRequest)
-         -> Box<Future<Item = GetObjectTorrentOutput<D::Chunk>, Error = GetObjectTorrentError>>;
+    fn get_object_torrent(&self, input: &GetObjectTorrentRequest) -> Box<Future<Item=GetObjectTorrentOutput<D::Chunk>, Error=GetObjectTorrentError> + 'static>;
 
 
     #[doc="This operation is useful to determine if a bucket exists and you have permission to access it."]
     fn head_bucket(&self,
                    input: &HeadBucketRequest)
-                   -> Box<Future<Item = (), Error = HeadBucketError>>;
+                   -> Box<Future<Item = (), Error = HeadBucketError> + 'static>;
 
 
     #[doc="The HEAD operation retrieves metadata from an object without returning the object itself. This operation is useful if you're only interested in an object's metadata. To use HEAD, you must have READ access to the object."]
     fn head_object(&self,
                    input: &HeadObjectRequest)
-                   -> Box<Future<Item = HeadObjectOutput, Error = HeadObjectError>>;
+                   -> Box<Future<Item = HeadObjectOutput, Error = HeadObjectError> + 'static>;
 
 
     #[doc="Lists the analytics configurations for the bucket."]
-    fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfigurationsRequest) -> Box<Future<Item=ListBucketAnalyticsConfigurationsOutput, Error=ListBucketAnalyticsConfigurationsError>>;
+    fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfigurationsRequest) -> Box<Future<Item=ListBucketAnalyticsConfigurationsOutput, Error=ListBucketAnalyticsConfigurationsError> + 'static>;
 
 
     #[doc="Returns a list of inventory configurations for the bucket."]
-    fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfigurationsRequest) -> Box<Future<Item=ListBucketInventoryConfigurationsOutput, Error=ListBucketInventoryConfigurationsError>>;
+    fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfigurationsRequest) -> Box<Future<Item=ListBucketInventoryConfigurationsOutput, Error=ListBucketInventoryConfigurationsError> + 'static>;
 
 
     #[doc="Lists the metrics configurations for the bucket."]
-    fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurationsRequest) -> Box<Future<Item=ListBucketMetricsConfigurationsOutput, Error=ListBucketMetricsConfigurationsError>>;
+    fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurationsRequest) -> Box<Future<Item=ListBucketMetricsConfigurationsOutput, Error=ListBucketMetricsConfigurationsError> + 'static>;
 
 
     #[doc="Returns a list of all buckets owned by the authenticated sender of the request."]
-    fn list_buckets(&self) -> Box<Future<Item = ListBucketsOutput, Error = ListBucketsError>>;
+    fn list_buckets
+        (&self)
+         -> Box<Future<Item = ListBucketsOutput, Error = ListBucketsError> + 'static>;
 
 
     #[doc="This operation lists in-progress multipart uploads."]
-    fn list_multipart_uploads
-        (&self,
-         input: &ListMultipartUploadsRequest)
-         -> Box<Future<Item = ListMultipartUploadsOutput, Error = ListMultipartUploadsError>>;
+    fn list_multipart_uploads(&self, input: &ListMultipartUploadsRequest) -> Box<Future<Item=ListMultipartUploadsOutput, Error=ListMultipartUploadsError> + 'static>;
 
 
     #[doc="Returns metadata about all of the versions of objects in a bucket."]
     fn list_object_versions
         (&self,
          input: &ListObjectVersionsRequest)
-         -> Box<Future<Item = ListObjectVersionsOutput, Error = ListObjectVersionsError>>;
+         -> Box<Future<Item = ListObjectVersionsOutput, Error = ListObjectVersionsError> + 'static>;
 
 
     #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket."]
-    fn list_objects(&self,
-                    input: &ListObjectsRequest)
-                    -> Box<Future<Item = ListObjectsOutput, Error = ListObjectsError>>;
+    fn list_objects
+        (&self,
+         input: &ListObjectsRequest)
+         -> Box<Future<Item = ListObjectsOutput, Error = ListObjectsError> + 'static>;
 
 
     #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. Note: ListObjectsV2 is the revised List Objects API and we recommend you use this revised API for new application development."]
-    fn list_objects_v2(&self,
-                       input: &ListObjectsV2Request)
-                       -> Box<Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error>>;
+    fn list_objects_v2
+        (&self,
+         input: &ListObjectsV2Request)
+         -> Box<Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error> + 'static>;
 
 
     #[doc="Lists the parts that have been uploaded for a specific multipart upload."]
     fn list_parts(&self,
                   input: &ListPartsRequest)
-                  -> Box<Future<Item = ListPartsOutput, Error = ListPartsError>>;
+                  -> Box<Future<Item = ListPartsOutput, Error = ListPartsError> + 'static>;
 
 
     #[doc="Sets the accelerate configuration of an existing bucket."]
     fn put_bucket_accelerate_configuration
         (&self,
          input: &PutBucketAccelerateConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketAccelerateConfigurationError>>;
+         -> Box<Future<Item = (), Error = PutBucketAccelerateConfigurationError> + 'static>;
 
 
     #[doc="Sets the permissions on a bucket using access control lists (ACL)."]
     fn put_bucket_acl(&self,
                       input: &PutBucketAclRequest)
-                      -> Box<Future<Item = (), Error = PutBucketAclError>>;
+                      -> Box<Future<Item = (), Error = PutBucketAclError> + 'static>;
 
 
     #[doc="Sets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
     fn put_bucket_analytics_configuration
         (&self,
          input: &PutBucketAnalyticsConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketAnalyticsConfigurationError>>;
+         -> Box<Future<Item = (), Error = PutBucketAnalyticsConfigurationError> + 'static>;
 
 
     #[doc="Sets the cors configuration for a bucket."]
     fn put_bucket_cors(&self,
                        input: &PutBucketCorsRequest)
-                       -> Box<Future<Item = (), Error = PutBucketCorsError>>;
+                       -> Box<Future<Item = (), Error = PutBucketCorsError> + 'static>;
 
 
     #[doc="Adds an inventory configuration (identified by the inventory ID) from the bucket."]
     fn put_bucket_inventory_configuration
         (&self,
          input: &PutBucketInventoryConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketInventoryConfigurationError>>;
+         -> Box<Future<Item = (), Error = PutBucketInventoryConfigurationError> + 'static>;
 
 
     #[doc="Deprecated, see the PutBucketLifecycleConfiguration operation."]
-    fn put_bucket_lifecycle(&self,
-                            input: &PutBucketLifecycleRequest)
-                            -> Box<Future<Item = (), Error = PutBucketLifecycleError>>;
+    fn put_bucket_lifecycle
+        (&self,
+         input: &PutBucketLifecycleRequest)
+         -> Box<Future<Item = (), Error = PutBucketLifecycleError> + 'static>;
 
 
     #[doc="Sets lifecycle configuration for your bucket. If a lifecycle configuration exists, it replaces it."]
     fn put_bucket_lifecycle_configuration
         (&self,
          input: &PutBucketLifecycleConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketLifecycleConfigurationError>>;
+         -> Box<Future<Item = (), Error = PutBucketLifecycleConfigurationError> + 'static>;
 
 
     #[doc="Set the logging parameters for a bucket and to specify permissions for who can view and modify the logging parameters. To set the logging status of a bucket, you must be the bucket owner."]
     fn put_bucket_logging(&self,
                           input: &PutBucketLoggingRequest)
-                          -> Box<Future<Item = (), Error = PutBucketLoggingError>>;
+                          -> Box<Future<Item = (), Error = PutBucketLoggingError> + 'static>;
 
 
     #[doc="Sets a metrics configuration (specified by the metrics configuration ID) for the bucket."]
     fn put_bucket_metrics_configuration
         (&self,
          input: &PutBucketMetricsConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketMetricsConfigurationError>>;
+         -> Box<Future<Item = (), Error = PutBucketMetricsConfigurationError> + 'static>;
 
 
     #[doc="Deprecated, see the PutBucketNotificationConfiguraiton operation."]
-    fn put_bucket_notification(&self,
-                               input: &PutBucketNotificationRequest)
-                               -> Box<Future<Item = (), Error = PutBucketNotificationError>>;
+    fn put_bucket_notification
+        (&self,
+         input: &PutBucketNotificationRequest)
+         -> Box<Future<Item = (), Error = PutBucketNotificationError> + 'static>;
 
 
     #[doc="Enables notifications of specified events for a bucket."]
     fn put_bucket_notification_configuration
         (&self,
          input: &PutBucketNotificationConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketNotificationConfigurationError>>;
+         -> Box<Future<Item = (), Error = PutBucketNotificationConfigurationError> + 'static>;
 
 
     #[doc="Replaces a policy on a bucket. If the bucket already has a policy, the one in this request completely replaces it."]
     fn put_bucket_policy(&self,
                          input: &PutBucketPolicyRequest)
-                         -> Box<Future<Item = (), Error = PutBucketPolicyError>>;
+                         -> Box<Future<Item = (), Error = PutBucketPolicyError> + 'static>;
 
 
     #[doc="Creates a new replication configuration (or replaces an existing one, if present)."]
-    fn put_bucket_replication(&self,
-                              input: &PutBucketReplicationRequest)
-                              -> Box<Future<Item = (), Error = PutBucketReplicationError>>;
+    fn put_bucket_replication
+        (&self,
+         input: &PutBucketReplicationRequest)
+         -> Box<Future<Item = (), Error = PutBucketReplicationError> + 'static>;
 
 
     #[doc="Sets the request payment configuration for a bucket. By default, the bucket owner pays for downloads from the bucket. This configuration parameter enables the bucket owner (only) to specify that the person requesting the download will be charged for the download. Documentation on requester pays buckets can be found at http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html"]
     fn put_bucket_request_payment
         (&self,
          input: &PutBucketRequestPaymentRequest)
-         -> Box<Future<Item = (), Error = PutBucketRequestPaymentError>>;
+         -> Box<Future<Item = (), Error = PutBucketRequestPaymentError> + 'static>;
 
 
     #[doc="Sets the tags for a bucket."]
     fn put_bucket_tagging(&self,
                           input: &PutBucketTaggingRequest)
-                          -> Box<Future<Item = (), Error = PutBucketTaggingError>>;
+                          -> Box<Future<Item = (), Error = PutBucketTaggingError> + 'static>;
 
 
     #[doc="Sets the versioning state of an existing bucket. To set the versioning state, you must be the bucket owner."]
-    fn put_bucket_versioning(&self,
-                             input: &PutBucketVersioningRequest)
-                             -> Box<Future<Item = (), Error = PutBucketVersioningError>>;
+    fn put_bucket_versioning
+        (&self,
+         input: &PutBucketVersioningRequest)
+         -> Box<Future<Item = (), Error = PutBucketVersioningError> + 'static>;
 
 
     #[doc="Set the website configuration for a bucket."]
     fn put_bucket_website(&self,
                           input: &PutBucketWebsiteRequest)
-                          -> Box<Future<Item = (), Error = PutBucketWebsiteError>>;
+                          -> Box<Future<Item = (), Error = PutBucketWebsiteError> + 'static>;
 
 
     #[doc="Adds an object to a bucket."]
     fn put_object(&self,
                   input: &PutObjectRequest)
-                  -> Box<Future<Item = PutObjectOutput, Error = PutObjectError>>;
+                  -> Box<Future<Item = PutObjectOutput, Error = PutObjectError> + 'static>;
 
 
     #[doc="uses the acl subresource to set the access control list (ACL) permissions for an object that already exists in a bucket"]
-    fn put_object_acl(&self,
-                      input: &PutObjectAclRequest)
-                      -> Box<Future<Item = PutObjectAclOutput, Error = PutObjectAclError>>;
+    fn put_object_acl
+        (&self,
+         input: &PutObjectAclRequest)
+         -> Box<Future<Item = PutObjectAclOutput, Error = PutObjectAclError> + 'static>;
 
 
     #[doc="Sets the supplied tag-set to an object that already exists in a bucket"]
     fn put_object_tagging
         (&self,
          input: &PutObjectTaggingRequest)
-         -> Box<Future<Item = PutObjectTaggingOutput, Error = PutObjectTaggingError>>;
+         -> Box<Future<Item = PutObjectTaggingOutput, Error = PutObjectTaggingError> + 'static>;
 
 
     #[doc="Restores an archived copy of an object back into Amazon S3"]
-    fn restore_object(&self,
-                      input: &RestoreObjectRequest)
-                      -> Box<Future<Item = RestoreObjectOutput, Error = RestoreObjectError>>;
+    fn restore_object
+        (&self,
+         input: &RestoreObjectRequest)
+         -> Box<Future<Item = RestoreObjectOutput, Error = RestoreObjectError> + 'static>;
 
 
     #[doc="<p>Uploads a part in a multipart upload.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
     fn upload_part(&self,
                    input: &UploadPartRequest)
-                   -> Box<Future<Item = UploadPartOutput, Error = UploadPartError>>;
+                   -> Box<Future<Item = UploadPartOutput, Error = UploadPartError> + 'static>;
 
 
     #[doc="Uploads a part by copying data from an existing object as data source."]
     fn upload_part_copy
         (&self,
          input: &UploadPartCopyRequest)
-         -> Box<Future<Item = UploadPartCopyOutput, Error = UploadPartCopyError>>;
+         -> Box<Future<Item = UploadPartCopyOutput, Error = UploadPartCopyError> + 'static>;
 }
 /// A client for the Amazon S3 API.
 pub struct S3Client<P, D>
@@ -18639,10 +18626,7 @@ impl<P, D> S3<D> for S3Client<P, D>
 {
     #[doc="<p>Aborts a multipart upload.</p><p>To verify that all parts have been removed, so you don't get charged for the part storage, you should call the List Parts operation and ensure the parts list is empty.</p>"]
     #[allow(unused_variables, warnings)]
-    fn abort_multipart_upload
-        (&self,
-         input: &AbortMultipartUploadRequest)
-         -> Box<Future<Item = AbortMultipartUploadOutput, Error = AbortMultipartUploadError>> {
+fn abort_multipart_upload(&self, input: &AbortMultipartUploadRequest) -> Box<Future<Item=AbortMultipartUploadOutput, Error=AbortMultipartUploadError> + 'static>{
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -18718,10 +18702,7 @@ impl<P, D> S3<D> for S3Client<P, D>
 
     #[doc="Completes a multipart upload by assembling previously uploaded parts."]
     #[allow(unused_variables, warnings)]
-    fn complete_multipart_upload
-        (&self,
-         input: &CompleteMultipartUploadRequest)
-         -> Box<Future<Item = CompleteMultipartUploadOutput, Error = CompleteMultipartUploadError>> {
+fn complete_multipart_upload(&self, input: &CompleteMultipartUploadRequest) -> Box<Future<Item=CompleteMultipartUploadOutput, Error=CompleteMultipartUploadError> + 'static>{
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
@@ -18814,7 +18795,7 @@ if let Some(version_id) = response_headers.get("x-amz-version-id") {
     #[allow(unused_variables, warnings)]
     fn copy_object(&self,
                    input: &CopyObjectRequest)
-                   -> Box<Future<Item = CopyObjectOutput, Error = CopyObjectError>> {
+                   -> Box<Future<Item = CopyObjectOutput, Error = CopyObjectError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -19046,9 +19027,10 @@ if let Some(version_id) = response_headers.get("x-amz-version-id") {
 
     #[doc="Creates a new bucket."]
     #[allow(unused_variables, warnings)]
-    fn create_bucket(&self,
-                     input: &CreateBucketRequest)
-                     -> Box<Future<Item = CreateBucketOutput, Error = CreateBucketError>> {
+    fn create_bucket
+        (&self,
+         input: &CreateBucketRequest)
+         -> Box<Future<Item = CreateBucketOutput, Error = CreateBucketError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -19154,10 +19136,7 @@ if let Some(version_id) = response_headers.get("x-amz-version-id") {
 
     #[doc="<p>Initiates a multipart upload and returns an upload ID.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
     #[allow(unused_variables, warnings)]
-    fn create_multipart_upload
-        (&self,
-         input: &CreateMultipartUploadRequest)
-         -> Box<Future<Item = CreateMultipartUploadOutput, Error = CreateMultipartUploadError>> {
+fn create_multipart_upload(&self, input: &CreateMultipartUploadRequest) -> Box<Future<Item=CreateMultipartUploadOutput, Error=CreateMultipartUploadError> + 'static>{
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
@@ -19329,7 +19308,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
     #[allow(unused_variables, warnings)]
     fn delete_bucket(&self,
                      input: &DeleteBucketRequest)
-                     -> Box<Future<Item = (), Error = DeleteBucketError>> {
+                     -> Box<Future<Item = (), Error = DeleteBucketError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19376,7 +19355,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
     fn delete_bucket_analytics_configuration
         (&self,
          input: &DeleteBucketAnalyticsConfigurationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketAnalyticsConfigurationError>> {
+         -> Box<Future<Item = (), Error = DeleteBucketAnalyticsConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19418,7 +19397,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
     #[allow(unused_variables, warnings)]
     fn delete_bucket_cors(&self,
                           input: &DeleteBucketCorsRequest)
-                          -> Box<Future<Item = (), Error = DeleteBucketCorsError>> {
+                          -> Box<Future<Item = (), Error = DeleteBucketCorsError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19467,7 +19446,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
     fn delete_bucket_inventory_configuration
         (&self,
          input: &DeleteBucketInventoryConfigurationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketInventoryConfigurationError>> {
+         -> Box<Future<Item = (), Error = DeleteBucketInventoryConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19507,9 +19486,10 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="Deletes the lifecycle configuration from the bucket."]
     #[allow(unused_variables, warnings)]
-    fn delete_bucket_lifecycle(&self,
-                               input: &DeleteBucketLifecycleRequest)
-                               -> Box<Future<Item = (), Error = DeleteBucketLifecycleError>> {
+    fn delete_bucket_lifecycle
+        (&self,
+         input: &DeleteBucketLifecycleRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketLifecycleError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19559,7 +19539,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
     fn delete_bucket_metrics_configuration
         (&self,
          input: &DeleteBucketMetricsConfigurationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketMetricsConfigurationError>> {
+         -> Box<Future<Item = (), Error = DeleteBucketMetricsConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19599,9 +19579,10 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="Deletes the policy from the bucket."]
     #[allow(unused_variables, warnings)]
-    fn delete_bucket_policy(&self,
-                            input: &DeleteBucketPolicyRequest)
-                            -> Box<Future<Item = (), Error = DeleteBucketPolicyError>> {
+    fn delete_bucket_policy
+        (&self,
+         input: &DeleteBucketPolicyRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketPolicyError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19650,7 +19631,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
     fn delete_bucket_replication
         (&self,
          input: &DeleteBucketReplicationRequest)
-         -> Box<Future<Item = (), Error = DeleteBucketReplicationError>> {
+         -> Box<Future<Item = (), Error = DeleteBucketReplicationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19697,9 +19678,10 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="Deletes the tags from the bucket."]
     #[allow(unused_variables, warnings)]
-    fn delete_bucket_tagging(&self,
-                             input: &DeleteBucketTaggingRequest)
-                             -> Box<Future<Item = (), Error = DeleteBucketTaggingError>> {
+    fn delete_bucket_tagging
+        (&self,
+         input: &DeleteBucketTaggingRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketTaggingError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19746,9 +19728,10 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="This operation removes the website configuration from the bucket."]
     #[allow(unused_variables, warnings)]
-    fn delete_bucket_website(&self,
-                             input: &DeleteBucketWebsiteRequest)
-                             -> Box<Future<Item = (), Error = DeleteBucketWebsiteError>> {
+    fn delete_bucket_website
+        (&self,
+         input: &DeleteBucketWebsiteRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketWebsiteError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19795,9 +19778,10 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="Removes the null version (if there is one) of an object and inserts a delete marker, which becomes the latest version of the object. If there isn't a null version, Amazon S3 does not remove any objects."]
     #[allow(unused_variables, warnings)]
-    fn delete_object(&self,
-                     input: &DeleteObjectRequest)
-                     -> Box<Future<Item = DeleteObjectOutput, Error = DeleteObjectError>> {
+    fn delete_object
+        (&self,
+         input: &DeleteObjectRequest)
+         -> Box<Future<Item = DeleteObjectOutput, Error = DeleteObjectError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19885,10 +19869,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="Removes the tag-set from an existing object."]
     #[allow(unused_variables, warnings)]
-    fn delete_object_tagging
-        (&self,
-         input: &DeleteObjectTaggingRequest)
-         -> Box<Future<Item = DeleteObjectTaggingOutput, Error = DeleteObjectTaggingError>> {
+fn delete_object_tagging(&self, input: &DeleteObjectTaggingRequest) -> Box<Future<Item=DeleteObjectTaggingOutput, Error=DeleteObjectTaggingError> + 'static>{
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
@@ -19964,9 +19945,10 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="This operation enables you to delete multiple objects from a bucket using a single HTTP request. You may specify up to 1000 keys."]
     #[allow(unused_variables, warnings)]
-    fn delete_objects(&self,
-                      input: &DeleteObjectsRequest)
-                      -> Box<Future<Item = DeleteObjectsOutput, Error = DeleteObjectsError>> {
+    fn delete_objects
+        (&self,
+         input: &DeleteObjectsRequest)
+         -> Box<Future<Item = DeleteObjectsOutput, Error = DeleteObjectsError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
@@ -20051,7 +20033,7 @@ if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-en
 
     #[doc="Returns the accelerate configuration of a bucket."]
     #[allow(unused_variables, warnings)]
-fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigurationRequest) -> Box<Future<Item=GetBucketAccelerateConfigurationOutput, Error=GetBucketAccelerateConfigurationError>>{
+fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigurationRequest) -> Box<Future<Item=GetBucketAccelerateConfigurationOutput, Error=GetBucketAccelerateConfigurationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20109,9 +20091,10 @@ fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigu
 
     #[doc="Gets the access control policy for the bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_acl(&self,
-                      input: &GetBucketAclRequest)
-                      -> Box<Future<Item = GetBucketAclOutput, Error = GetBucketAclError>> {
+    fn get_bucket_acl
+        (&self,
+         input: &GetBucketAclRequest)
+         -> Box<Future<Item = GetBucketAclOutput, Error = GetBucketAclError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20179,7 +20162,7 @@ fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigu
 
     #[doc="Gets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
     #[allow(unused_variables, warnings)]
-fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigurationRequest) -> Box<Future<Item=GetBucketAnalyticsConfigurationOutput, Error=GetBucketAnalyticsConfigurationError>>{
+fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigurationRequest) -> Box<Future<Item=GetBucketAnalyticsConfigurationOutput, Error=GetBucketAnalyticsConfigurationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20238,9 +20221,10 @@ fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigura
 
     #[doc="Returns the cors configuration for the bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_cors(&self,
-                       input: &GetBucketCorsRequest)
-                       -> Box<Future<Item = GetBucketCorsOutput, Error = GetBucketCorsError>> {
+    fn get_bucket_cors
+        (&self,
+         input: &GetBucketCorsRequest)
+         -> Box<Future<Item = GetBucketCorsOutput, Error = GetBucketCorsError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20308,7 +20292,7 @@ fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigura
 
     #[doc="Returns an inventory configuration (identified by the inventory ID) from the bucket."]
     #[allow(unused_variables, warnings)]
-fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigurationRequest) -> Box<Future<Item=GetBucketInventoryConfigurationOutput, Error=GetBucketInventoryConfigurationError>>{
+fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigurationRequest) -> Box<Future<Item=GetBucketInventoryConfigurationOutput, Error=GetBucketInventoryConfigurationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20370,7 +20354,7 @@ fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigura
     fn get_bucket_lifecycle
         (&self,
          input: &GetBucketLifecycleRequest)
-         -> Box<Future<Item = GetBucketLifecycleOutput, Error = GetBucketLifecycleError>> {
+         -> Box<Future<Item = GetBucketLifecycleOutput, Error = GetBucketLifecycleError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20439,7 +20423,7 @@ fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigura
 
     #[doc="Returns the lifecycle configuration information set on the bucket."]
     #[allow(unused_variables, warnings)]
-fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigurationRequest) -> Box<Future<Item=GetBucketLifecycleConfigurationOutput, Error=GetBucketLifecycleConfigurationError>>{
+fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigurationRequest) -> Box<Future<Item=GetBucketLifecycleConfigurationOutput, Error=GetBucketLifecycleConfigurationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20500,7 +20484,7 @@ fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigura
     fn get_bucket_location
         (&self,
          input: &GetBucketLocationRequest)
-         -> Box<Future<Item = GetBucketLocationOutput, Error = GetBucketLocationError>> {
+         -> Box<Future<Item = GetBucketLocationOutput, Error = GetBucketLocationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20572,7 +20556,7 @@ fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigura
     fn get_bucket_logging
         (&self,
          input: &GetBucketLoggingRequest)
-         -> Box<Future<Item = GetBucketLoggingOutput, Error = GetBucketLoggingError>> {
+         -> Box<Future<Item = GetBucketLoggingOutput, Error = GetBucketLoggingError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20641,10 +20625,7 @@ fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigura
 
     #[doc="Gets a metrics configuration (specified by the metrics configuration ID) from the bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_metrics_configuration(&self,
-                                        input: &GetBucketMetricsConfigurationRequest)
-                                        -> Box<Future<Item = GetBucketMetricsConfigurationOutput,
-                                                      Error = GetBucketMetricsConfigurationError>> {
+fn get_bucket_metrics_configuration(&self, input: &GetBucketMetricsConfigurationRequest) -> Box<Future<Item=GetBucketMetricsConfigurationOutput, Error=GetBucketMetricsConfigurationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20703,11 +20684,7 @@ fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigura
 
     #[doc="Deprecated, see the GetBucketNotificationConfiguration operation."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_notification
-        (&self,
-         input: &GetBucketNotificationConfigurationRequest)
-         -> Box<Future<Item = NotificationConfigurationDeprecated,
-                       Error = GetBucketNotificationError>> {
+fn get_bucket_notification(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfigurationDeprecated, Error=GetBucketNotificationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20765,7 +20742,7 @@ fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigura
 
     #[doc="Returns the notification configuration of a bucket."]
     #[allow(unused_variables, warnings)]
-fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfiguration, Error=GetBucketNotificationConfigurationError>>{
+fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfiguration, Error=GetBucketNotificationConfigurationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20826,7 +20803,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
     fn get_bucket_policy
         (&self,
          input: &GetBucketPolicyRequest)
-         -> Box<Future<Item = GetBucketPolicyOutput, Error = GetBucketPolicyError>> {
+         -> Box<Future<Item = GetBucketPolicyOutput, Error = GetBucketPolicyError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20882,10 +20859,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Returns the replication configuration of a bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_replication
-        (&self,
-         input: &GetBucketReplicationRequest)
-         -> Box<Future<Item = GetBucketReplicationOutput, Error = GetBucketReplicationError>> {
+fn get_bucket_replication(&self, input: &GetBucketReplicationRequest) -> Box<Future<Item=GetBucketReplicationOutput, Error=GetBucketReplicationError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -20955,10 +20929,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Returns the request payment configuration of a bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_request_payment
-        (&self,
-         input: &GetBucketRequestPaymentRequest)
-         -> Box<Future<Item = GetBucketRequestPaymentOutput, Error = GetBucketRequestPaymentError>> {
+fn get_bucket_request_payment(&self, input: &GetBucketRequestPaymentRequest) -> Box<Future<Item=GetBucketRequestPaymentOutput, Error=GetBucketRequestPaymentError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21019,7 +20990,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
     fn get_bucket_tagging
         (&self,
          input: &GetBucketTaggingRequest)
-         -> Box<Future<Item = GetBucketTaggingOutput, Error = GetBucketTaggingError>> {
+         -> Box<Future<Item = GetBucketTaggingOutput, Error = GetBucketTaggingError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21088,10 +21059,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Returns the versioning state of a bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_bucket_versioning
-        (&self,
-         input: &GetBucketVersioningRequest)
-         -> Box<Future<Item = GetBucketVersioningOutput, Error = GetBucketVersioningError>> {
+fn get_bucket_versioning(&self, input: &GetBucketVersioningRequest) -> Box<Future<Item=GetBucketVersioningOutput, Error=GetBucketVersioningError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21164,7 +21132,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
     fn get_bucket_website
         (&self,
          input: &GetBucketWebsiteRequest)
-         -> Box<Future<Item = GetBucketWebsiteOutput, Error = GetBucketWebsiteError>> {
+         -> Box<Future<Item = GetBucketWebsiteOutput, Error = GetBucketWebsiteError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21233,9 +21201,10 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Retrieves objects from Amazon S3."]
     #[allow(unused_variables, warnings)]
-    fn get_object(&self,
-                  input: &GetObjectRequest)
-                  -> Box<Future<Item = GetObjectOutput<D::Chunk>, Error = GetObjectError>> {
+    fn get_object
+        (&self,
+         input: &GetObjectRequest)
+         -> Box<Future<Item = GetObjectOutput<D::Chunk>, Error = GetObjectError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21484,9 +21453,10 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Returns the access control list (ACL) of an object."]
     #[allow(unused_variables, warnings)]
-    fn get_object_acl(&self,
-                      input: &GetObjectAclRequest)
-                      -> Box<Future<Item = GetObjectAclOutput, Error = GetObjectAclError>> {
+    fn get_object_acl
+        (&self,
+         input: &GetObjectAclRequest)
+         -> Box<Future<Item = GetObjectAclOutput, Error = GetObjectAclError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21566,7 +21536,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
     fn get_object_tagging
         (&self,
          input: &GetObjectTaggingRequest)
-         -> Box<Future<Item = GetObjectTaggingOutput, Error = GetObjectTaggingError>> {
+         -> Box<Future<Item = GetObjectTaggingOutput, Error = GetObjectTaggingError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21641,10 +21611,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Return torrent files from a bucket."]
     #[allow(unused_variables, warnings)]
-    fn get_object_torrent
-        (&self,
-         input: &GetObjectTorrentRequest)
-         -> Box<Future<Item = GetObjectTorrentOutput<D::Chunk>, Error = GetObjectTorrentError>> {
+fn get_object_torrent(&self, input: &GetObjectTorrentRequest) -> Box<Future<Item=GetObjectTorrentOutput<D::Chunk>, Error=GetObjectTorrentError> + 'static>{
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -21704,7 +21671,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
     #[allow(unused_variables, warnings)]
     fn head_bucket(&self,
                    input: &HeadBucketRequest)
-                   -> Box<Future<Item = (), Error = HeadBucketError>> {
+                   -> Box<Future<Item = (), Error = HeadBucketError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("HEAD", "s3", &self.region, &request_uri);
@@ -21750,7 +21717,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
     #[allow(unused_variables, warnings)]
     fn head_object(&self,
                    input: &HeadObjectRequest)
-                   -> Box<Future<Item = HeadObjectOutput, Error = HeadObjectError>> {
+                   -> Box<Future<Item = HeadObjectOutput, Error = HeadObjectError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("HEAD", "s3", &self.region, &request_uri);
@@ -21969,7 +21936,7 @@ fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationCon
 
     #[doc="Lists the analytics configurations for the bucket."]
     #[allow(unused_variables, warnings)]
-fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfigurationsRequest) -> Box<Future<Item=ListBucketAnalyticsConfigurationsOutput, Error=ListBucketAnalyticsConfigurationsError>>{
+fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfigurationsRequest) -> Box<Future<Item=ListBucketAnalyticsConfigurationsOutput, Error=ListBucketAnalyticsConfigurationsError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22030,7 +21997,7 @@ fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfig
 
     #[doc="Returns a list of inventory configurations for the bucket."]
     #[allow(unused_variables, warnings)]
-fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfigurationsRequest) -> Box<Future<Item=ListBucketInventoryConfigurationsOutput, Error=ListBucketInventoryConfigurationsError>>{
+fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfigurationsRequest) -> Box<Future<Item=ListBucketInventoryConfigurationsOutput, Error=ListBucketInventoryConfigurationsError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22091,7 +22058,7 @@ fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfig
 
     #[doc="Lists the metrics configurations for the bucket."]
     #[allow(unused_variables, warnings)]
-fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurationsRequest) -> Box<Future<Item=ListBucketMetricsConfigurationsOutput, Error=ListBucketMetricsConfigurationsError>>{
+fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurationsRequest) -> Box<Future<Item=ListBucketMetricsConfigurationsOutput, Error=ListBucketMetricsConfigurationsError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22152,7 +22119,9 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Returns a list of all buckets owned by the authenticated sender of the request."]
     #[allow(unused_variables, warnings)]
-    fn list_buckets(&self) -> Box<Future<Item = ListBucketsOutput, Error = ListBucketsError>> {
+    fn list_buckets
+        (&self)
+         -> Box<Future<Item = ListBucketsOutput, Error = ListBucketsError> + 'static> {
         let request_uri = "/";
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22218,10 +22187,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="This operation lists in-progress multipart uploads."]
     #[allow(unused_variables, warnings)]
-    fn list_multipart_uploads
-        (&self,
-         input: &ListMultipartUploadsRequest)
-         -> Box<Future<Item = ListMultipartUploadsOutput, Error = ListMultipartUploadsError>> {
+fn list_multipart_uploads(&self, input: &ListMultipartUploadsRequest) -> Box<Future<Item=ListMultipartUploadsOutput, Error=ListMultipartUploadsError> + 'static>{
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22312,7 +22278,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn list_object_versions
         (&self,
          input: &ListObjectVersionsRequest)
-         -> Box<Future<Item = ListObjectVersionsOutput, Error = ListObjectVersionsError>> {
+         -> Box<Future<Item = ListObjectVersionsOutput, Error = ListObjectVersionsError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22399,9 +22365,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket."]
     #[allow(unused_variables, warnings)]
-    fn list_objects(&self,
-                    input: &ListObjectsRequest)
-                    -> Box<Future<Item = ListObjectsOutput, Error = ListObjectsError>> {
+    fn list_objects
+        (&self,
+         input: &ListObjectsRequest)
+         -> Box<Future<Item = ListObjectsOutput, Error = ListObjectsError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22486,9 +22453,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. Note: ListObjectsV2 is the revised List Objects API and we recommend you use this revised API for new application development."]
     #[allow(unused_variables, warnings)]
-    fn list_objects_v2(&self,
-                       input: &ListObjectsV2Request)
-                       -> Box<Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error>> {
+    fn list_objects_v2
+        (&self,
+         input: &ListObjectsV2Request)
+         -> Box<Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22582,7 +22550,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn list_parts(&self,
                   input: &ListPartsRequest)
-                  -> Box<Future<Item = ListPartsOutput, Error = ListPartsError>> {
+                  -> Box<Future<Item = ListPartsOutput, Error = ListPartsError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -22673,7 +22641,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_accelerate_configuration
         (&self,
          input: &PutBucketAccelerateConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketAccelerateConfigurationError>> {
+         -> Box<Future<Item = (), Error = PutBucketAccelerateConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -22721,7 +22689,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_bucket_acl(&self,
                       input: &PutBucketAclRequest)
-                      -> Box<Future<Item = (), Error = PutBucketAclError>> {
+                      -> Box<Future<Item = (), Error = PutBucketAclError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -22808,7 +22776,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_analytics_configuration
         (&self,
          input: &PutBucketAnalyticsConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketAnalyticsConfigurationError>> {
+         -> Box<Future<Item = (), Error = PutBucketAnalyticsConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -22857,7 +22825,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_bucket_cors(&self,
                        input: &PutBucketCorsRequest)
-                       -> Box<Future<Item = (), Error = PutBucketCorsError>> {
+                       -> Box<Future<Item = (), Error = PutBucketCorsError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -22918,7 +22886,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_inventory_configuration
         (&self,
          input: &PutBucketInventoryConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketInventoryConfigurationError>> {
+         -> Box<Future<Item = (), Error = PutBucketInventoryConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -22965,9 +22933,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Deprecated, see the PutBucketLifecycleConfiguration operation."]
     #[allow(unused_variables, warnings)]
-    fn put_bucket_lifecycle(&self,
-                            input: &PutBucketLifecycleRequest)
-                            -> Box<Future<Item = (), Error = PutBucketLifecycleError>> {
+    fn put_bucket_lifecycle
+        (&self,
+         input: &PutBucketLifecycleRequest)
+         -> Box<Future<Item = (), Error = PutBucketLifecycleError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23035,7 +23004,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_lifecycle_configuration
         (&self,
          input: &PutBucketLifecycleConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketLifecycleConfigurationError>> {
+         -> Box<Future<Item = (), Error = PutBucketLifecycleConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23092,7 +23061,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_bucket_logging(&self,
                           input: &PutBucketLoggingRequest)
-                          -> Box<Future<Item = (), Error = PutBucketLoggingError>> {
+                          -> Box<Future<Item = (), Error = PutBucketLoggingError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23151,7 +23120,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_metrics_configuration
         (&self,
          input: &PutBucketMetricsConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketMetricsConfigurationError>> {
+         -> Box<Future<Item = (), Error = PutBucketMetricsConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23198,9 +23167,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Deprecated, see the PutBucketNotificationConfiguraiton operation."]
     #[allow(unused_variables, warnings)]
-    fn put_bucket_notification(&self,
-                               input: &PutBucketNotificationRequest)
-                               -> Box<Future<Item = (), Error = PutBucketNotificationError>> {
+    fn put_bucket_notification
+        (&self,
+         input: &PutBucketNotificationRequest)
+         -> Box<Future<Item = (), Error = PutBucketNotificationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23258,7 +23228,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_notification_configuration
         (&self,
          input: &PutBucketNotificationConfigurationRequest)
-         -> Box<Future<Item = (), Error = PutBucketNotificationConfigurationError>> {
+         -> Box<Future<Item = (), Error = PutBucketNotificationConfigurationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23306,7 +23276,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_bucket_policy(&self,
                          input: &PutBucketPolicyRequest)
-                         -> Box<Future<Item = (), Error = PutBucketPolicyError>> {
+                         -> Box<Future<Item = (), Error = PutBucketPolicyError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23360,9 +23330,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Creates a new replication configuration (or replaces an existing one, if present)."]
     #[allow(unused_variables, warnings)]
-    fn put_bucket_replication(&self,
-                              input: &PutBucketReplicationRequest)
-                              -> Box<Future<Item = (), Error = PutBucketReplicationError>> {
+    fn put_bucket_replication
+        (&self,
+         input: &PutBucketReplicationRequest)
+         -> Box<Future<Item = (), Error = PutBucketReplicationError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23424,7 +23395,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_bucket_request_payment
         (&self,
          input: &PutBucketRequestPaymentRequest)
-         -> Box<Future<Item = (), Error = PutBucketRequestPaymentError>> {
+         -> Box<Future<Item = (), Error = PutBucketRequestPaymentError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23483,7 +23454,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_bucket_tagging(&self,
                           input: &PutBucketTaggingRequest)
-                          -> Box<Future<Item = (), Error = PutBucketTaggingError>> {
+                          -> Box<Future<Item = (), Error = PutBucketTaggingError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23539,9 +23510,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Sets the versioning state of an existing bucket. To set the versioning state, you must be the bucket owner."]
     #[allow(unused_variables, warnings)]
-    fn put_bucket_versioning(&self,
-                             input: &PutBucketVersioningRequest)
-                             -> Box<Future<Item = (), Error = PutBucketVersioningError>> {
+    fn put_bucket_versioning
+        (&self,
+         input: &PutBucketVersioningRequest)
+         -> Box<Future<Item = (), Error = PutBucketVersioningError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23604,7 +23576,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_bucket_website(&self,
                           input: &PutBucketWebsiteRequest)
-                          -> Box<Future<Item = (), Error = PutBucketWebsiteError>> {
+                          -> Box<Future<Item = (), Error = PutBucketWebsiteError> + 'static> {
         let request_uri = format!("/{bucket}", bucket = input.bucket);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23662,7 +23634,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn put_object(&self,
                   input: &PutObjectRequest)
-                  -> Box<Future<Item = PutObjectOutput, Error = PutObjectError>> {
+                  -> Box<Future<Item = PutObjectOutput, Error = PutObjectError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23859,9 +23831,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="uses the acl subresource to set the access control list (ACL) permissions for an object that already exists in a bucket"]
     #[allow(unused_variables, warnings)]
-    fn put_object_acl(&self,
-                      input: &PutObjectAclRequest)
-                      -> Box<Future<Item = PutObjectAclOutput, Error = PutObjectAclError>> {
+    fn put_object_acl
+        (&self,
+         input: &PutObjectAclRequest)
+         -> Box<Future<Item = PutObjectAclOutput, Error = PutObjectAclError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -23980,7 +23953,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn put_object_tagging
         (&self,
          input: &PutObjectTaggingRequest)
-         -> Box<Future<Item = PutObjectTaggingOutput, Error = PutObjectTaggingError>> {
+         -> Box<Future<Item = PutObjectTaggingOutput, Error = PutObjectTaggingError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -24063,9 +24036,10 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
 
     #[doc="Restores an archived copy of an object back into Amazon S3"]
     #[allow(unused_variables, warnings)]
-    fn restore_object(&self,
-                      input: &RestoreObjectRequest)
-                      -> Box<Future<Item = RestoreObjectOutput, Error = RestoreObjectError>> {
+    fn restore_object
+        (&self,
+         input: &RestoreObjectRequest)
+         -> Box<Future<Item = RestoreObjectOutput, Error = RestoreObjectError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
@@ -24155,7 +24129,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     #[allow(unused_variables, warnings)]
     fn upload_part(&self,
                    input: &UploadPartRequest)
-                   -> Box<Future<Item = UploadPartOutput, Error = UploadPartError>> {
+                   -> Box<Future<Item = UploadPartOutput, Error = UploadPartError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
@@ -24283,7 +24257,7 @@ fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurat
     fn upload_part_copy
         (&self,
          input: &UploadPartCopyRequest)
-         -> Box<Future<Item = UploadPartCopyOutput, Error = UploadPartCopyError>> {
+         -> Box<Future<Item = UploadPartCopyOutput, Error = UploadPartCopyError> + 'static> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);

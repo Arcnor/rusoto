@@ -14,7 +14,7 @@ impl GenerateProtocol for JsonGenerator {
 
             writeln!(writer,"
                 {documentation}
-                {method_signature} -> Box<Future<Item={output_type}, Error={error_type}>>;
+                {method_signature} -> Box<Future<Item={output_type}, Error={error_type}> + 'static>;
                 ",
                 documentation = generate_documentation(operation).unwrap_or_else(|| "".to_owned()),
                 method_signature = generate_method_signature(service, operation),
@@ -33,7 +33,7 @@ impl GenerateProtocol for JsonGenerator {
             writeln!(writer,
                      "
                 {documentation}
-                {method_signature} -> Box<Future<Item={output_type}, Error={error_type}>> {{
+                {method_signature} -> Box<Future<Item={output_type}, Error={error_type}> + 'static> {{
                     let mut request = SignedRequest::new(\"{http_method}\", \"{signing_name}\", &self.region, \"{request_uri}\");
                     {modify_endpoint_prefix}
                     request.set_content_type(\"application/x-amz-json-{json_version}\".to_owned());
