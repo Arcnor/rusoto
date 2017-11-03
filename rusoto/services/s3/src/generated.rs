@@ -14,7 +14,6 @@
 #[allow(warnings)]
 use futures::future;
 use futures::{Future, Poll, Stream};
-use hyper::Client;
 use hyper::StatusCode;
 use rusoto_core::request::DispatchSignedRequest;
 use rusoto_core::region;
@@ -22,7 +21,6 @@ use rusoto_core::region;
 use std::fmt;
 use std::error::Error;
 use std::io;
-use std::io::Read;
 use rusoto_core::request::HttpDispatchError;
 use rusoto_core::credential::{CredentialsError, ProvideAwsCredentials};
 
@@ -980,19 +978,19 @@ impl AnalyticsS3ExportFileFormatSerializer {
     }
 }
 
-pub struct StreamingBody<B, E>(Box<Stream<Item=B, Error=E> + Send>);
+pub struct StreamingBody<B>(Box<Stream<Item = B, Error = HttpDispatchError> + Send>);
 
-impl<B, E> fmt::Debug for StreamingBody<B, E> {
+impl<B> fmt::Debug for StreamingBody<B> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<Body: streaming content>")
     }
 }
 
-impl<B, E> Stream for StreamingBody<B, E> {
+impl<B> Stream for StreamingBody<B> {
     type Item = B;
-    type Error = E;
+    type Error = HttpDispatchError;
 
-    fn poll(&mut self) -> Poll<Option<B>, E> {
+    fn poll(&mut self) -> Poll<Option<B>, Self::Error> {
         self.0.poll()
     }
 }
@@ -4648,7 +4646,7 @@ pub struct GetObjectAclRequest {
 pub struct GetObjectOutput<B> {
     pub accept_ranges: Option<String>,
     #[doc="Object data."]
-    pub body: Option<StreamingBody<B, GetObjectError>>,
+    pub body: Option<StreamingBody<B>>,
     #[doc="Specifies caching behavior along the request/reply chain."]
     pub cache_control: Option<String>,
     #[doc="Specifies presentational information for the object."]
@@ -4795,7 +4793,7 @@ pub struct GetObjectTaggingRequest {
 
 #[derive(Default,Debug)]
 pub struct GetObjectTorrentOutput<B> {
-    pub body: Option<StreamingBody<B, GetObjectTorrentError>>,
+    pub body: Option<StreamingBody<B>>,
     pub request_charged: Option<String>,
 }
 
@@ -18152,9 +18150,464 @@ impl Error for UploadPartCopyError {
     }
 }
 /// Trait representing the capabilities of the Amazon S3 API. Amazon S3 clients implement this trait.
-pub trait S3<B> {
+pub trait S3<D: DispatchSignedRequest> {
+    #[doc="<p>Aborts a multipart upload.</p><p>To verify that all parts have been removed, so you don't get charged for the part storage, you should call the List Parts operation and ensure the parts list is empty.</p>"]
+    fn abort_multipart_upload
+        (&self,
+         input: &AbortMultipartUploadRequest)
+         -> Box<Future<Item = AbortMultipartUploadOutput, Error = AbortMultipartUploadError>>;
+
+
+    #[doc="Completes a multipart upload by assembling previously uploaded parts."]
+    fn complete_multipart_upload
+        (&self,
+         input: &CompleteMultipartUploadRequest)
+         -> Box<Future<Item = CompleteMultipartUploadOutput, Error = CompleteMultipartUploadError>>;
+
+
+    #[doc="Creates a copy of an object that is already stored in Amazon S3."]
+    fn copy_object(&self,
+                   input: &CopyObjectRequest)
+                   -> Box<Future<Item = CopyObjectOutput, Error = CopyObjectError>>;
+
+
+    #[doc="Creates a new bucket."]
+    fn create_bucket(&self,
+                     input: &CreateBucketRequest)
+                     -> Box<Future<Item = CreateBucketOutput, Error = CreateBucketError>>;
+
+
+    #[doc="<p>Initiates a multipart upload and returns an upload ID.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
+    fn create_multipart_upload
+        (&self,
+         input: &CreateMultipartUploadRequest)
+         -> Box<Future<Item = CreateMultipartUploadOutput, Error = CreateMultipartUploadError>>;
+
+
+    #[doc="Deletes the bucket. All objects (including all object versions and Delete Markers) in the bucket must be deleted before the bucket itself can be deleted."]
+    fn delete_bucket(&self,
+                     input: &DeleteBucketRequest)
+                     -> Box<Future<Item = (), Error = DeleteBucketError>>;
+
+
+    #[doc="Deletes an analytics configuration for the bucket (specified by the analytics configuration ID)."]
+    fn delete_bucket_analytics_configuration
+        (&self,
+         input: &DeleteBucketAnalyticsConfigurationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketAnalyticsConfigurationError>>;
+
+
+    #[doc="Deletes the cors configuration information set for the bucket."]
+    fn delete_bucket_cors(&self,
+                          input: &DeleteBucketCorsRequest)
+                          -> Box<Future<Item = (), Error = DeleteBucketCorsError>>;
+
+
+    #[doc="Deletes an inventory configuration (identified by the inventory ID) from the bucket."]
+    fn delete_bucket_inventory_configuration
+        (&self,
+         input: &DeleteBucketInventoryConfigurationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketInventoryConfigurationError>>;
+
+
+    #[doc="Deletes the lifecycle configuration from the bucket."]
+    fn delete_bucket_lifecycle(&self,
+                               input: &DeleteBucketLifecycleRequest)
+                               -> Box<Future<Item = (), Error = DeleteBucketLifecycleError>>;
+
+
+    #[doc="Deletes a metrics configuration (specified by the metrics configuration ID) from the bucket."]
+    fn delete_bucket_metrics_configuration
+        (&self,
+         input: &DeleteBucketMetricsConfigurationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketMetricsConfigurationError>>;
+
+
+    #[doc="Deletes the policy from the bucket."]
+    fn delete_bucket_policy(&self,
+                            input: &DeleteBucketPolicyRequest)
+                            -> Box<Future<Item = (), Error = DeleteBucketPolicyError>>;
+
+
+    #[doc="Deletes the replication configuration from the bucket."]
+    fn delete_bucket_replication
+        (&self,
+         input: &DeleteBucketReplicationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketReplicationError>>;
+
+
+    #[doc="Deletes the tags from the bucket."]
+    fn delete_bucket_tagging(&self,
+                             input: &DeleteBucketTaggingRequest)
+                             -> Box<Future<Item = (), Error = DeleteBucketTaggingError>>;
+
+
+    #[doc="This operation removes the website configuration from the bucket."]
+    fn delete_bucket_website(&self,
+                             input: &DeleteBucketWebsiteRequest)
+                             -> Box<Future<Item = (), Error = DeleteBucketWebsiteError>>;
+
+
+    #[doc="Removes the null version (if there is one) of an object and inserts a delete marker, which becomes the latest version of the object. If there isn't a null version, Amazon S3 does not remove any objects."]
+    fn delete_object(&self,
+                     input: &DeleteObjectRequest)
+                     -> Box<Future<Item = DeleteObjectOutput, Error = DeleteObjectError>>;
+
+
+    #[doc="Removes the tag-set from an existing object."]
+    fn delete_object_tagging
+        (&self,
+         input: &DeleteObjectTaggingRequest)
+         -> Box<Future<Item = DeleteObjectTaggingOutput, Error = DeleteObjectTaggingError>>;
+
+
+    #[doc="This operation enables you to delete multiple objects from a bucket using a single HTTP request. You may specify up to 1000 keys."]
+    fn delete_objects(&self,
+                      input: &DeleteObjectsRequest)
+                      -> Box<Future<Item = DeleteObjectsOutput, Error = DeleteObjectsError>>;
+
+
+    #[doc="Returns the accelerate configuration of a bucket."]
+    fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigurationRequest) -> Box<Future<Item=GetBucketAccelerateConfigurationOutput, Error=GetBucketAccelerateConfigurationError>>;
+
+
+    #[doc="Gets the access control policy for the bucket."]
+    fn get_bucket_acl(&self,
+                      input: &GetBucketAclRequest)
+                      -> Box<Future<Item = GetBucketAclOutput, Error = GetBucketAclError>>;
+
+
+    #[doc="Gets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
+    fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigurationRequest) -> Box<Future<Item=GetBucketAnalyticsConfigurationOutput, Error=GetBucketAnalyticsConfigurationError>>;
+
+
+    #[doc="Returns the cors configuration for the bucket."]
+    fn get_bucket_cors(&self,
+                       input: &GetBucketCorsRequest)
+                       -> Box<Future<Item = GetBucketCorsOutput, Error = GetBucketCorsError>>;
+
+
+    #[doc="Returns an inventory configuration (identified by the inventory ID) from the bucket."]
+    fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigurationRequest) -> Box<Future<Item=GetBucketInventoryConfigurationOutput, Error=GetBucketInventoryConfigurationError>>;
+
+
+    #[doc="Deprecated, see the GetBucketLifecycleConfiguration operation."]
+    fn get_bucket_lifecycle
+        (&self,
+         input: &GetBucketLifecycleRequest)
+         -> Box<Future<Item = GetBucketLifecycleOutput, Error = GetBucketLifecycleError>>;
+
+
+    #[doc="Returns the lifecycle configuration information set on the bucket."]
+    fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigurationRequest) -> Box<Future<Item=GetBucketLifecycleConfigurationOutput, Error=GetBucketLifecycleConfigurationError>>;
+
+
+    #[doc="Returns the region the bucket resides in."]
+    fn get_bucket_location
+        (&self,
+         input: &GetBucketLocationRequest)
+         -> Box<Future<Item = GetBucketLocationOutput, Error = GetBucketLocationError>>;
+
+
+    #[doc="Returns the logging status of a bucket and the permissions users have to view and modify that status. To use GET, you must be the bucket owner."]
+    fn get_bucket_logging
+        (&self,
+         input: &GetBucketLoggingRequest)
+         -> Box<Future<Item = GetBucketLoggingOutput, Error = GetBucketLoggingError>>;
+
+
+    #[doc="Gets a metrics configuration (specified by the metrics configuration ID) from the bucket."]
+    fn get_bucket_metrics_configuration(&self,
+                                        input: &GetBucketMetricsConfigurationRequest)
+                                        -> Box<Future<Item = GetBucketMetricsConfigurationOutput,
+                                                      Error = GetBucketMetricsConfigurationError>>;
+
+
+    #[doc="Deprecated, see the GetBucketNotificationConfiguration operation."]
+    fn get_bucket_notification
+        (&self,
+         input: &GetBucketNotificationConfigurationRequest)
+         -> Box<Future<Item = NotificationConfigurationDeprecated,
+                       Error = GetBucketNotificationError>>;
+
+
+    #[doc="Returns the notification configuration of a bucket."]
+    fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfiguration, Error=GetBucketNotificationConfigurationError>>;
+
+
+    #[doc="Returns the policy of a specified bucket."]
+    fn get_bucket_policy
+        (&self,
+         input: &GetBucketPolicyRequest)
+         -> Box<Future<Item = GetBucketPolicyOutput, Error = GetBucketPolicyError>>;
+
+
+    #[doc="Returns the replication configuration of a bucket."]
+    fn get_bucket_replication
+        (&self,
+         input: &GetBucketReplicationRequest)
+         -> Box<Future<Item = GetBucketReplicationOutput, Error = GetBucketReplicationError>>;
+
+
+    #[doc="Returns the request payment configuration of a bucket."]
+    fn get_bucket_request_payment
+        (&self,
+         input: &GetBucketRequestPaymentRequest)
+         -> Box<Future<Item = GetBucketRequestPaymentOutput, Error = GetBucketRequestPaymentError>>;
+
+
+    #[doc="Returns the tag set associated with the bucket."]
+    fn get_bucket_tagging
+        (&self,
+         input: &GetBucketTaggingRequest)
+         -> Box<Future<Item = GetBucketTaggingOutput, Error = GetBucketTaggingError>>;
+
+
+    #[doc="Returns the versioning state of a bucket."]
+    fn get_bucket_versioning
+        (&self,
+         input: &GetBucketVersioningRequest)
+         -> Box<Future<Item = GetBucketVersioningOutput, Error = GetBucketVersioningError>>;
+
+
+    #[doc="Returns the website configuration for a bucket."]
+    fn get_bucket_website
+        (&self,
+         input: &GetBucketWebsiteRequest)
+         -> Box<Future<Item = GetBucketWebsiteOutput, Error = GetBucketWebsiteError>>;
+
+
     #[doc="Retrieves objects from Amazon S3."]
-    fn get_object(&self, input: &GetObjectRequest) -> Box<Future<Item=GetObjectOutput<B>, Error=GetObjectError>>;
+    fn get_object(&self,
+                  input: &GetObjectRequest)
+                  -> Box<Future<Item = GetObjectOutput<D::Chunk>, Error = GetObjectError>>;
+
+
+    #[doc="Returns the access control list (ACL) of an object."]
+    fn get_object_acl(&self,
+                      input: &GetObjectAclRequest)
+                      -> Box<Future<Item = GetObjectAclOutput, Error = GetObjectAclError>>;
+
+
+    #[doc="Returns the tag-set of an object."]
+    fn get_object_tagging
+        (&self,
+         input: &GetObjectTaggingRequest)
+         -> Box<Future<Item = GetObjectTaggingOutput, Error = GetObjectTaggingError>>;
+
+
+    #[doc="Return torrent files from a bucket."]
+    fn get_object_torrent
+        (&self,
+         input: &GetObjectTorrentRequest)
+         -> Box<Future<Item = GetObjectTorrentOutput<D::Chunk>, Error = GetObjectTorrentError>>;
+
+
+    #[doc="This operation is useful to determine if a bucket exists and you have permission to access it."]
+    fn head_bucket(&self,
+                   input: &HeadBucketRequest)
+                   -> Box<Future<Item = (), Error = HeadBucketError>>;
+
+
+    #[doc="The HEAD operation retrieves metadata from an object without returning the object itself. This operation is useful if you're only interested in an object's metadata. To use HEAD, you must have READ access to the object."]
+    fn head_object(&self,
+                   input: &HeadObjectRequest)
+                   -> Box<Future<Item = HeadObjectOutput, Error = HeadObjectError>>;
+
+
+    #[doc="Lists the analytics configurations for the bucket."]
+    fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfigurationsRequest) -> Box<Future<Item=ListBucketAnalyticsConfigurationsOutput, Error=ListBucketAnalyticsConfigurationsError>>;
+
+
+    #[doc="Returns a list of inventory configurations for the bucket."]
+    fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfigurationsRequest) -> Box<Future<Item=ListBucketInventoryConfigurationsOutput, Error=ListBucketInventoryConfigurationsError>>;
+
+
+    #[doc="Lists the metrics configurations for the bucket."]
+    fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurationsRequest) -> Box<Future<Item=ListBucketMetricsConfigurationsOutput, Error=ListBucketMetricsConfigurationsError>>;
+
+
+    #[doc="Returns a list of all buckets owned by the authenticated sender of the request."]
+    fn list_buckets(&self) -> Box<Future<Item = ListBucketsOutput, Error = ListBucketsError>>;
+
+
+    #[doc="This operation lists in-progress multipart uploads."]
+    fn list_multipart_uploads
+        (&self,
+         input: &ListMultipartUploadsRequest)
+         -> Box<Future<Item = ListMultipartUploadsOutput, Error = ListMultipartUploadsError>>;
+
+
+    #[doc="Returns metadata about all of the versions of objects in a bucket."]
+    fn list_object_versions
+        (&self,
+         input: &ListObjectVersionsRequest)
+         -> Box<Future<Item = ListObjectVersionsOutput, Error = ListObjectVersionsError>>;
+
+
+    #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket."]
+    fn list_objects(&self,
+                    input: &ListObjectsRequest)
+                    -> Box<Future<Item = ListObjectsOutput, Error = ListObjectsError>>;
+
+
+    #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. Note: ListObjectsV2 is the revised List Objects API and we recommend you use this revised API for new application development."]
+    fn list_objects_v2(&self,
+                       input: &ListObjectsV2Request)
+                       -> Box<Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error>>;
+
+
+    #[doc="Lists the parts that have been uploaded for a specific multipart upload."]
+    fn list_parts(&self,
+                  input: &ListPartsRequest)
+                  -> Box<Future<Item = ListPartsOutput, Error = ListPartsError>>;
+
+
+    #[doc="Sets the accelerate configuration of an existing bucket."]
+    fn put_bucket_accelerate_configuration
+        (&self,
+         input: &PutBucketAccelerateConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketAccelerateConfigurationError>>;
+
+
+    #[doc="Sets the permissions on a bucket using access control lists (ACL)."]
+    fn put_bucket_acl(&self,
+                      input: &PutBucketAclRequest)
+                      -> Box<Future<Item = (), Error = PutBucketAclError>>;
+
+
+    #[doc="Sets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
+    fn put_bucket_analytics_configuration
+        (&self,
+         input: &PutBucketAnalyticsConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketAnalyticsConfigurationError>>;
+
+
+    #[doc="Sets the cors configuration for a bucket."]
+    fn put_bucket_cors(&self,
+                       input: &PutBucketCorsRequest)
+                       -> Box<Future<Item = (), Error = PutBucketCorsError>>;
+
+
+    #[doc="Adds an inventory configuration (identified by the inventory ID) from the bucket."]
+    fn put_bucket_inventory_configuration
+        (&self,
+         input: &PutBucketInventoryConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketInventoryConfigurationError>>;
+
+
+    #[doc="Deprecated, see the PutBucketLifecycleConfiguration operation."]
+    fn put_bucket_lifecycle(&self,
+                            input: &PutBucketLifecycleRequest)
+                            -> Box<Future<Item = (), Error = PutBucketLifecycleError>>;
+
+
+    #[doc="Sets lifecycle configuration for your bucket. If a lifecycle configuration exists, it replaces it."]
+    fn put_bucket_lifecycle_configuration
+        (&self,
+         input: &PutBucketLifecycleConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketLifecycleConfigurationError>>;
+
+
+    #[doc="Set the logging parameters for a bucket and to specify permissions for who can view and modify the logging parameters. To set the logging status of a bucket, you must be the bucket owner."]
+    fn put_bucket_logging(&self,
+                          input: &PutBucketLoggingRequest)
+                          -> Box<Future<Item = (), Error = PutBucketLoggingError>>;
+
+
+    #[doc="Sets a metrics configuration (specified by the metrics configuration ID) for the bucket."]
+    fn put_bucket_metrics_configuration
+        (&self,
+         input: &PutBucketMetricsConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketMetricsConfigurationError>>;
+
+
+    #[doc="Deprecated, see the PutBucketNotificationConfiguraiton operation."]
+    fn put_bucket_notification(&self,
+                               input: &PutBucketNotificationRequest)
+                               -> Box<Future<Item = (), Error = PutBucketNotificationError>>;
+
+
+    #[doc="Enables notifications of specified events for a bucket."]
+    fn put_bucket_notification_configuration
+        (&self,
+         input: &PutBucketNotificationConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketNotificationConfigurationError>>;
+
+
+    #[doc="Replaces a policy on a bucket. If the bucket already has a policy, the one in this request completely replaces it."]
+    fn put_bucket_policy(&self,
+                         input: &PutBucketPolicyRequest)
+                         -> Box<Future<Item = (), Error = PutBucketPolicyError>>;
+
+
+    #[doc="Creates a new replication configuration (or replaces an existing one, if present)."]
+    fn put_bucket_replication(&self,
+                              input: &PutBucketReplicationRequest)
+                              -> Box<Future<Item = (), Error = PutBucketReplicationError>>;
+
+
+    #[doc="Sets the request payment configuration for a bucket. By default, the bucket owner pays for downloads from the bucket. This configuration parameter enables the bucket owner (only) to specify that the person requesting the download will be charged for the download. Documentation on requester pays buckets can be found at http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html"]
+    fn put_bucket_request_payment
+        (&self,
+         input: &PutBucketRequestPaymentRequest)
+         -> Box<Future<Item = (), Error = PutBucketRequestPaymentError>>;
+
+
+    #[doc="Sets the tags for a bucket."]
+    fn put_bucket_tagging(&self,
+                          input: &PutBucketTaggingRequest)
+                          -> Box<Future<Item = (), Error = PutBucketTaggingError>>;
+
+
+    #[doc="Sets the versioning state of an existing bucket. To set the versioning state, you must be the bucket owner."]
+    fn put_bucket_versioning(&self,
+                             input: &PutBucketVersioningRequest)
+                             -> Box<Future<Item = (), Error = PutBucketVersioningError>>;
+
+
+    #[doc="Set the website configuration for a bucket."]
+    fn put_bucket_website(&self,
+                          input: &PutBucketWebsiteRequest)
+                          -> Box<Future<Item = (), Error = PutBucketWebsiteError>>;
+
+
+    #[doc="Adds an object to a bucket."]
+    fn put_object(&self,
+                  input: &PutObjectRequest)
+                  -> Box<Future<Item = PutObjectOutput, Error = PutObjectError>>;
+
+
+    #[doc="uses the acl subresource to set the access control list (ACL) permissions for an object that already exists in a bucket"]
+    fn put_object_acl(&self,
+                      input: &PutObjectAclRequest)
+                      -> Box<Future<Item = PutObjectAclOutput, Error = PutObjectAclError>>;
+
+
+    #[doc="Sets the supplied tag-set to an object that already exists in a bucket"]
+    fn put_object_tagging
+        (&self,
+         input: &PutObjectTaggingRequest)
+         -> Box<Future<Item = PutObjectTaggingOutput, Error = PutObjectTaggingError>>;
+
+
+    #[doc="Restores an archived copy of an object back into Amazon S3"]
+    fn restore_object(&self,
+                      input: &RestoreObjectRequest)
+                      -> Box<Future<Item = RestoreObjectOutput, Error = RestoreObjectError>>;
+
+
+    #[doc="<p>Uploads a part in a multipart upload.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
+    fn upload_part(&self,
+                   input: &UploadPartRequest)
+                   -> Box<Future<Item = UploadPartOutput, Error = UploadPartError>>;
+
+
+    #[doc="Uploads a part by copying data from an existing object as data source."]
+    fn upload_part_copy
+        (&self,
+         input: &UploadPartCopyRequest)
+         -> Box<Future<Item = UploadPartCopyOutput, Error = UploadPartCopyError>>;
 }
 /// A client for the Amazon S3 API.
 pub struct S3Client<P, D>
@@ -18179,14 +18632,2610 @@ impl<P, D> S3Client<P, D>
     }
 }
 
-impl<P, D> S3<D::Chunk> for S3Client<P, D>
+impl<P, D> S3<D> for S3Client<P, D>
     where P: ProvideAwsCredentials,
           D: DispatchSignedRequest,
-          D::Chunk: Extend<<D::Chunk as IntoIterator>::Item> + IntoIterator + Default + AsRef<[u8]> + 'static
+          D::Chunk: 'static
 {
+    #[doc="<p>Aborts a multipart upload.</p><p>To verify that all parts have been removed, so you don't get charged for the part storage, you should call the List Parts operation and ensure the parts list is empty.</p>"]
+    #[allow(unused_variables, warnings)]
+    fn abort_multipart_upload
+        (&self,
+         input: &AbortMultipartUploadRequest)
+         -> Box<Future<Item = AbortMultipartUploadOutput, Error = AbortMultipartUploadError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        params.put("uploadId", &input.upload_id);
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = AbortMultipartUploadOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(AbortMultipartUploadOutputDeserializer::deserialize(&actual_tag_name,
+                                                                                 &mut stack));
+                }
+
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(AbortMultipartUploadError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                         .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Completes a multipart upload by assembling previously uploaded parts."]
+    #[allow(unused_variables, warnings)]
+    fn complete_multipart_upload
+        (&self,
+         input: &CompleteMultipartUploadRequest)
+         -> Box<Future<Item = CompleteMultipartUploadOutput, Error = CompleteMultipartUploadError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        params.put("uploadId", &input.upload_id);
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        if input.multipart_upload.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            CompletedMultipartUploadSerializer::serialize(&mut writer,
+                                                          "CompleteMultipartUpload",
+                                                          input.multipart_upload.as_ref().unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = CompleteMultipartUploadOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(CompleteMultipartUploadOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            if let Some(expiration) = response_headers.get("x-amz-expiration") {
+                    let value = expiration.to_owned();
+                    result.expiration = Some(value)
+                  };
+if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                  };
+if let Some(ssekms_key_id) = response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                  };
+if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                  };
+if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                  };
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(CompleteMultipartUploadError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Creates a copy of an object that is already stored in Amazon S3."]
+    #[allow(unused_variables, warnings)]
+    fn copy_object(&self,
+                   input: &CopyObjectRequest)
+                   -> Box<Future<Item = CopyObjectOutput, Error = CopyObjectError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref acl) = input.acl {
+            request.add_header("x-amz-acl", &acl.to_string());
+        }
+
+        if let Some(ref cache_control) = input.cache_control {
+            request.add_header("Cache-Control", &cache_control.to_string());
+        }
+
+        if let Some(ref content_disposition) = input.content_disposition {
+            request.add_header("Content-Disposition", &content_disposition.to_string());
+        }
+
+        if let Some(ref content_encoding) = input.content_encoding {
+            request.add_header("Content-Encoding", &content_encoding.to_string());
+        }
+
+        if let Some(ref content_language) = input.content_language {
+            request.add_header("Content-Language", &content_language.to_string());
+        }
+
+        if let Some(ref content_type) = input.content_type {
+            request.add_header("Content-Type", &content_type.to_string());
+        }
+        request.add_header("x-amz-copy-source", &input.copy_source);
+
+        if let Some(ref copy_source_if_match) = input.copy_source_if_match {
+            request.add_header("x-amz-copy-source-if-match",
+                               &copy_source_if_match.to_string());
+        }
+
+        if let Some(ref copy_source_if_modified_since) = input.copy_source_if_modified_since {
+            request.add_header("x-amz-copy-source-if-modified-since",
+                               &copy_source_if_modified_since.to_string());
+        }
+
+        if let Some(ref copy_source_if_none_match) = input.copy_source_if_none_match {
+            request.add_header("x-amz-copy-source-if-none-match",
+                               &copy_source_if_none_match.to_string());
+        }
+
+        if let Some(ref copy_source_if_unmodified_since) = input.copy_source_if_unmodified_since {
+            request.add_header("x-amz-copy-source-if-unmodified-since",
+                               &copy_source_if_unmodified_since.to_string());
+        }
+
+        if let Some(ref copy_source_sse_customer_algorithm) =
+            input.copy_source_sse_customer_algorithm {
+            request.add_header("x-amz-copy-source-server-side-encryption-customer-algorithm",
+                               &copy_source_sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref copy_source_sse_customer_key) = input.copy_source_sse_customer_key {
+            request.add_header("x-amz-copy-source-server-side-encryption-customer-key",
+                               &copy_source_sse_customer_key.to_string());
+        }
+
+        if let Some(ref copy_source_sse_customer_key_md5) = input.copy_source_sse_customer_key_md5 {
+            request.add_header("x-amz-copy-source-server-side-encryption-customer-key-MD5",
+                               &copy_source_sse_customer_key_md5.to_string());
+        }
+
+        if let Some(ref expires) = input.expires {
+            request.add_header("Expires", &expires.to_string());
+        }
+
+        if let Some(ref grant_full_control) = input.grant_full_control {
+            request.add_header("x-amz-grant-full-control", &grant_full_control.to_string());
+        }
+
+        if let Some(ref grant_read) = input.grant_read {
+            request.add_header("x-amz-grant-read", &grant_read.to_string());
+        }
+
+        if let Some(ref grant_read_acp) = input.grant_read_acp {
+            request.add_header("x-amz-grant-read-acp", &grant_read_acp.to_string());
+        }
+
+        if let Some(ref grant_write_acp) = input.grant_write_acp {
+            request.add_header("x-amz-grant-write-acp", &grant_write_acp.to_string());
+        }
+
+        if let Some(ref metadata_directive) = input.metadata_directive {
+            request.add_header("x-amz-metadata-directive", &metadata_directive.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+
+        if let Some(ref sse_customer_algorithm) = input.sse_customer_algorithm {
+            request.add_header("x-amz-server-side-encryption-customer-algorithm",
+                               &sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref sse_customer_key) = input.sse_customer_key {
+            request.add_header("x-amz-server-side-encryption-customer-key",
+                               &sse_customer_key.to_string());
+        }
+
+        if let Some(ref sse_customer_key_md5) = input.sse_customer_key_md5 {
+            request.add_header("x-amz-server-side-encryption-customer-key-MD5",
+                               &sse_customer_key_md5.to_string());
+        }
+
+        if let Some(ref ssekms_key_id) = input.ssekms_key_id {
+            request.add_header("x-amz-server-side-encryption-aws-kms-key-id",
+                               &ssekms_key_id.to_string());
+        }
+
+        if let Some(ref server_side_encryption) = input.server_side_encryption {
+            request.add_header("x-amz-server-side-encryption",
+                               &server_side_encryption.to_string());
+        }
+
+        if let Some(ref storage_class) = input.storage_class {
+            request.add_header("x-amz-storage-class", &storage_class.to_string());
+        }
+
+        if let Some(ref tagging) = input.tagging {
+            request.add_header("x-amz-tagging", &tagging.to_string());
+        }
+
+        if let Some(ref tagging_directive) = input.tagging_directive {
+            request.add_header("x-amz-tagging-directive", &tagging_directive.to_string());
+        }
+
+        if let Some(ref website_redirect_location) = input.website_redirect_location {
+            request.add_header("x-amz-website-redirect-location",
+                               &website_redirect_location.to_string());
+        }
+
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = CopyObjectOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(CopyObjectOutputDeserializer::deserialize(&actual_tag_name,
+                                                                            &mut stack));
+                }
+
+                if let Some(copy_source_version_id) =
+                    response_headers.get("x-amz-copy-source-version-id") {
+                    let value = copy_source_version_id.to_owned();
+                    result.copy_source_version_id = Some(value)
+                };
+                if let Some(expiration) = response_headers.get("x-amz-expiration") {
+                    let value = expiration.to_owned();
+                    result.expiration = Some(value)
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                if let Some(sse_customer_algorithm) =
+                    response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                    let value = sse_customer_algorithm.to_owned();
+                    result.sse_customer_algorithm = Some(value)
+                };
+                if let Some(sse_customer_key_md5) =
+                    response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                    let value = sse_customer_key_md5.to_owned();
+                    result.sse_customer_key_md5 = Some(value)
+                };
+                if let Some(ssekms_key_id) =
+                    response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                };
+                if let Some(server_side_encryption) =
+                    response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                };
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(CopyObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Creates a new bucket."]
+    #[allow(unused_variables, warnings)]
+    fn create_bucket(&self,
+                     input: &CreateBucketRequest)
+                     -> Box<Future<Item = CreateBucketOutput, Error = CreateBucketError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref acl) = input.acl {
+            request.add_header("x-amz-acl", &acl.to_string());
+        }
+
+        if let Some(ref grant_full_control) = input.grant_full_control {
+            request.add_header("x-amz-grant-full-control", &grant_full_control.to_string());
+        }
+
+        if let Some(ref grant_read) = input.grant_read {
+            request.add_header("x-amz-grant-read", &grant_read.to_string());
+        }
+
+        if let Some(ref grant_read_acp) = input.grant_read_acp {
+            request.add_header("x-amz-grant-read-acp", &grant_read_acp.to_string());
+        }
+
+        if let Some(ref grant_write) = input.grant_write {
+            request.add_header("x-amz-grant-write", &grant_write.to_string());
+        }
+
+        if let Some(ref grant_write_acp) = input.grant_write_acp {
+            request.add_header("x-amz-grant-write-acp", &grant_write_acp.to_string());
+        }
+
+        let mut payload: Vec<u8>;
+        if input.create_bucket_configuration.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            CreateBucketConfigurationSerializer::serialize(&mut writer,
+                                                           "CreateBucketConfiguration",
+                                                           input
+                                                               .create_bucket_configuration
+                                                               .as_ref()
+                                                               .unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = CreateBucketOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(CreateBucketOutputDeserializer::deserialize(&actual_tag_name,
+                                                                              &mut stack));
+                }
+
+                if let Some(location) = response_headers.get("Location") {
+                    let value = location.to_owned();
+                    result.location = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(CreateBucketError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="<p>Initiates a multipart upload and returns an upload ID.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
+    #[allow(unused_variables, warnings)]
+    fn create_multipart_upload
+        (&self,
+         input: &CreateMultipartUploadRequest)
+         -> Box<Future<Item = CreateMultipartUploadOutput, Error = CreateMultipartUploadError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref acl) = input.acl {
+            request.add_header("x-amz-acl", &acl.to_string());
+        }
+
+        if let Some(ref cache_control) = input.cache_control {
+            request.add_header("Cache-Control", &cache_control.to_string());
+        }
+
+        if let Some(ref content_disposition) = input.content_disposition {
+            request.add_header("Content-Disposition", &content_disposition.to_string());
+        }
+
+        if let Some(ref content_encoding) = input.content_encoding {
+            request.add_header("Content-Encoding", &content_encoding.to_string());
+        }
+
+        if let Some(ref content_language) = input.content_language {
+            request.add_header("Content-Language", &content_language.to_string());
+        }
+
+        if let Some(ref content_type) = input.content_type {
+            request.add_header("Content-Type", &content_type.to_string());
+        }
+
+        if let Some(ref expires) = input.expires {
+            request.add_header("Expires", &expires.to_string());
+        }
+
+        if let Some(ref grant_full_control) = input.grant_full_control {
+            request.add_header("x-amz-grant-full-control", &grant_full_control.to_string());
+        }
+
+        if let Some(ref grant_read) = input.grant_read {
+            request.add_header("x-amz-grant-read", &grant_read.to_string());
+        }
+
+        if let Some(ref grant_read_acp) = input.grant_read_acp {
+            request.add_header("x-amz-grant-read-acp", &grant_read_acp.to_string());
+        }
+
+        if let Some(ref grant_write_acp) = input.grant_write_acp {
+            request.add_header("x-amz-grant-write-acp", &grant_write_acp.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+
+        if let Some(ref sse_customer_algorithm) = input.sse_customer_algorithm {
+            request.add_header("x-amz-server-side-encryption-customer-algorithm",
+                               &sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref sse_customer_key) = input.sse_customer_key {
+            request.add_header("x-amz-server-side-encryption-customer-key",
+                               &sse_customer_key.to_string());
+        }
+
+        if let Some(ref sse_customer_key_md5) = input.sse_customer_key_md5 {
+            request.add_header("x-amz-server-side-encryption-customer-key-MD5",
+                               &sse_customer_key_md5.to_string());
+        }
+
+        if let Some(ref ssekms_key_id) = input.ssekms_key_id {
+            request.add_header("x-amz-server-side-encryption-aws-kms-key-id",
+                               &ssekms_key_id.to_string());
+        }
+
+        if let Some(ref server_side_encryption) = input.server_side_encryption {
+            request.add_header("x-amz-server-side-encryption",
+                               &server_side_encryption.to_string());
+        }
+
+        if let Some(ref storage_class) = input.storage_class {
+            request.add_header("x-amz-storage-class", &storage_class.to_string());
+        }
+
+        if let Some(ref tagging) = input.tagging {
+            request.add_header("x-amz-tagging", &tagging.to_string());
+        }
+
+        if let Some(ref website_redirect_location) = input.website_redirect_location {
+            request.add_header("x-amz-website-redirect-location",
+                               &website_redirect_location.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("uploads");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = CreateMultipartUploadOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(CreateMultipartUploadOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            if let Some(abort_date) = response_headers.get("x-amz-abort-date") {
+                    let value = abort_date.to_owned();
+                    result.abort_date = Some(value)
+                  };
+if let Some(abort_rule_id) = response_headers.get("x-amz-abort-rule-id") {
+                    let value = abort_rule_id.to_owned();
+                    result.abort_rule_id = Some(value)
+                  };
+if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                  };
+if let Some(sse_customer_algorithm) = response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                    let value = sse_customer_algorithm.to_owned();
+                    result.sse_customer_algorithm = Some(value)
+                  };
+if let Some(sse_customer_key_md5) = response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                    let value = sse_customer_key_md5.to_owned();
+                    result.sse_customer_key_md5 = Some(value)
+                  };
+if let Some(ssekms_key_id) = response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                  };
+if let Some(server_side_encryption) = response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                  };
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(CreateMultipartUploadError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deletes the bucket. All objects (including all object versions and Delete Markers) in the bucket must be deleted before the bucket itself can be deleted."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket(&self,
+                     input: &DeleteBucketRequest)
+                     -> Box<Future<Item = (), Error = DeleteBucketError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Deletes an analytics configuration for the bucket (specified by the analytics configuration ID)."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_analytics_configuration
+        (&self,
+         input: &DeleteBucketAnalyticsConfigurationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketAnalyticsConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("analytics");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(DeleteBucketAnalyticsConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deletes the cors configuration information set for the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_cors(&self,
+                          input: &DeleteBucketCorsRequest)
+                          -> Box<Future<Item = (), Error = DeleteBucketCorsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("cors");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketCorsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Deletes an inventory configuration (identified by the inventory ID) from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_inventory_configuration
+        (&self,
+         input: &DeleteBucketInventoryConfigurationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketInventoryConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("inventory");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(DeleteBucketInventoryConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deletes the lifecycle configuration from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_lifecycle(&self,
+                               input: &DeleteBucketLifecycleRequest)
+                               -> Box<Future<Item = (), Error = DeleteBucketLifecycleError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("lifecycle");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketLifecycleError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                          .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Deletes a metrics configuration (specified by the metrics configuration ID) from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_metrics_configuration
+        (&self,
+         input: &DeleteBucketMetricsConfigurationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketMetricsConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("metrics");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(DeleteBucketMetricsConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deletes the policy from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_policy(&self,
+                            input: &DeleteBucketPolicyRequest)
+                            -> Box<Future<Item = (), Error = DeleteBucketPolicyError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("policy");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketPolicyError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Deletes the replication configuration from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_replication
+        (&self,
+         input: &DeleteBucketReplicationRequest)
+         -> Box<Future<Item = (), Error = DeleteBucketReplicationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("replication");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketReplicationError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                            .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Deletes the tags from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_tagging(&self,
+                             input: &DeleteBucketTaggingRequest)
+                             -> Box<Future<Item = (), Error = DeleteBucketTaggingError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("tagging");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketTaggingError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                        .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="This operation removes the website configuration from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn delete_bucket_website(&self,
+                             input: &DeleteBucketWebsiteRequest)
+                             -> Box<Future<Item = (), Error = DeleteBucketWebsiteError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("website");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteBucketWebsiteError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                        .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Removes the null version (if there is one) of an object and inserts a delete marker, which becomes the latest version of the object. If there isn't a null version, Amazon S3 does not remove any objects."]
+    #[allow(unused_variables, warnings)]
+    fn delete_object(&self,
+                     input: &DeleteObjectRequest)
+                     -> Box<Future<Item = DeleteObjectOutput, Error = DeleteObjectError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref mfa) = input.mfa {
+            request.add_header("x-amz-mfa", &mfa.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = DeleteObjectOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(DeleteObjectOutputDeserializer::deserialize(&actual_tag_name,
+                                                                              &mut stack));
+                }
+
+                if let Some(delete_marker) = response_headers.get("x-amz-delete-marker") {
+                    let value = delete_marker.to_owned();
+                    result.delete_marker = Some(value.parse::<bool>().unwrap())
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Removes the tag-set from an existing object."]
+    #[allow(unused_variables, warnings)]
+    fn delete_object_tagging
+        (&self,
+         input: &DeleteObjectTaggingRequest)
+         -> Box<Future<Item = DeleteObjectTaggingOutput, Error = DeleteObjectTaggingError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("DELETE", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        params.put_key("tagging");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = DeleteObjectTaggingOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(DeleteObjectTaggingOutputDeserializer::deserialize(&actual_tag_name,
+                                                                                &mut stack));
+                }
+
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteObjectTaggingError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                        .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="This operation enables you to delete multiple objects from a bucket using a single HTTP request. You may specify up to 1000 keys."]
+    #[allow(unused_variables, warnings)]
+    fn delete_objects(&self,
+                      input: &DeleteObjectsRequest)
+                      -> Box<Future<Item = DeleteObjectsOutput, Error = DeleteObjectsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref mfa) = input.mfa {
+            request.add_header("x-amz-mfa", &mfa.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("delete");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        DeleteSerializer::serialize(&mut writer, "Delete", &input.delete);
+        payload = writer.into_inner();
+        let digest = md5::compute(&payload);
+        // need to deref digest and then pass that reference:
+        request.add_header("Content-MD5", &base64::encode(&(*digest)));
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = DeleteObjectsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(DeleteObjectsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                               &mut stack));
+                }
+
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(DeleteObjectsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the accelerate configuration of a bucket."]
+    #[allow(unused_variables, warnings)]
+fn get_bucket_accelerate_configuration(&self, input: &GetBucketAccelerateConfigurationRequest) -> Box<Future<Item=GetBucketAccelerateConfigurationOutput, Error=GetBucketAccelerateConfigurationError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("accelerate");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = GetBucketAccelerateConfigurationOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(GetBucketAccelerateConfigurationOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketAccelerateConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Gets the access control policy for the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_acl(&self,
+                      input: &GetBucketAclRequest)
+                      -> Box<Future<Item = GetBucketAclOutput, Error = GetBucketAclError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("acl");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketAclOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(GetBucketAclOutputDeserializer::deserialize(&actual_tag_name,
+                                                                              &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketAclError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Gets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
+    #[allow(unused_variables, warnings)]
+fn get_bucket_analytics_configuration(&self, input: &GetBucketAnalyticsConfigurationRequest) -> Box<Future<Item=GetBucketAnalyticsConfigurationOutput, Error=GetBucketAnalyticsConfigurationError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("analytics");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = GetBucketAnalyticsConfigurationOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(GetBucketAnalyticsConfigurationOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketAnalyticsConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns the cors configuration for the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_cors(&self,
+                       input: &GetBucketCorsRequest)
+                       -> Box<Future<Item = GetBucketCorsOutput, Error = GetBucketCorsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("cors");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketCorsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(GetBucketCorsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                               &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketCorsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns an inventory configuration (identified by the inventory ID) from the bucket."]
+    #[allow(unused_variables, warnings)]
+fn get_bucket_inventory_configuration(&self, input: &GetBucketInventoryConfigurationRequest) -> Box<Future<Item=GetBucketInventoryConfigurationOutput, Error=GetBucketInventoryConfigurationError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("inventory");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = GetBucketInventoryConfigurationOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(GetBucketInventoryConfigurationOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketInventoryConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deprecated, see the GetBucketLifecycleConfiguration operation."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_lifecycle
+        (&self,
+         input: &GetBucketLifecycleRequest)
+         -> Box<Future<Item = GetBucketLifecycleOutput, Error = GetBucketLifecycleError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("lifecycle");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketLifecycleOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketLifecycleOutputDeserializer::deserialize(&actual_tag_name,
+                                                                               &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketLifecycleError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the lifecycle configuration information set on the bucket."]
+    #[allow(unused_variables, warnings)]
+fn get_bucket_lifecycle_configuration(&self, input: &GetBucketLifecycleConfigurationRequest) -> Box<Future<Item=GetBucketLifecycleConfigurationOutput, Error=GetBucketLifecycleConfigurationError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("lifecycle");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = GetBucketLifecycleConfigurationOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(GetBucketLifecycleConfigurationOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketLifecycleConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns the region the bucket resides in."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_location
+        (&self,
+         input: &GetBucketLocationRequest)
+         -> Box<Future<Item = GetBucketLocationOutput, Error = GetBucketLocationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("location");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketLocationOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketLocationOutputDeserializer::deserialize(&actual_tag_name,
+                                                                              &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketLocationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the logging status of a bucket and the permissions users have to view and modify that status. To use GET, you must be the bucket owner."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_logging
+        (&self,
+         input: &GetBucketLoggingRequest)
+         -> Box<Future<Item = GetBucketLoggingOutput, Error = GetBucketLoggingError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("logging");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketLoggingOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketLoggingOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketLoggingError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Gets a metrics configuration (specified by the metrics configuration ID) from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_metrics_configuration(&self,
+                                        input: &GetBucketMetricsConfigurationRequest)
+                                        -> Box<Future<Item = GetBucketMetricsConfigurationOutput,
+                                                      Error = GetBucketMetricsConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("metrics");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = GetBucketMetricsConfigurationOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(GetBucketMetricsConfigurationOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketMetricsConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deprecated, see the GetBucketNotificationConfiguration operation."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_notification
+        (&self,
+         input: &GetBucketNotificationConfigurationRequest)
+         -> Box<Future<Item = NotificationConfigurationDeprecated,
+                       Error = GetBucketNotificationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("notification");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = NotificationConfigurationDeprecated::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(NotificationConfigurationDeprecatedDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketNotificationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns the notification configuration of a bucket."]
+    #[allow(unused_variables, warnings)]
+fn get_bucket_notification_configuration(&self, input: &GetBucketNotificationConfigurationRequest) -> Box<Future<Item=NotificationConfiguration, Error=GetBucketNotificationConfigurationError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("notification");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = NotificationConfiguration::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(NotificationConfigurationDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketNotificationConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns the policy of a specified bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_policy
+        (&self,
+         input: &GetBucketPolicyRequest)
+         -> Box<Future<Item = GetBucketPolicyOutput, Error = GetBucketPolicyError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("policy");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .map(move |body| {
+                let mut result = GetBucketPolicyOutput::default();
+                result.policy = Some(String::from_utf8_lossy(body.as_ref()).into());
+
+                result
+            }))
+
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketPolicyError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the replication configuration of a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_replication
+        (&self,
+         input: &GetBucketReplicationRequest)
+         -> Box<Future<Item = GetBucketReplicationOutput, Error = GetBucketReplicationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("replication");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketReplicationOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketReplicationOutputDeserializer::deserialize(&actual_tag_name,
+                                                                                 &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketReplicationError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                         .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the request payment configuration of a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_request_payment
+        (&self,
+         input: &GetBucketRequestPaymentRequest)
+         -> Box<Future<Item = GetBucketRequestPaymentOutput, Error = GetBucketRequestPaymentError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("requestPayment");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = GetBucketRequestPaymentOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(GetBucketRequestPaymentOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(GetBucketRequestPaymentError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns the tag set associated with the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_tagging
+        (&self,
+         input: &GetBucketTaggingRequest)
+         -> Box<Future<Item = GetBucketTaggingOutput, Error = GetBucketTaggingError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("tagging");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketTaggingOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketTaggingOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketTaggingError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the versioning state of a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_versioning
+        (&self,
+         input: &GetBucketVersioningRequest)
+         -> Box<Future<Item = GetBucketVersioningOutput, Error = GetBucketVersioningError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("versioning");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketVersioningOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketVersioningOutputDeserializer::deserialize(&actual_tag_name,
+                                                                                &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketVersioningError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                        .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the website configuration for a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_bucket_website
+        (&self,
+         input: &GetBucketWebsiteRequest)
+         -> Box<Future<Item = GetBucketWebsiteOutput, Error = GetBucketWebsiteError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("website");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetBucketWebsiteOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetBucketWebsiteOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetBucketWebsiteError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
     #[doc="Retrieves objects from Amazon S3."]
     #[allow(unused_variables, warnings)]
-    fn get_object(&self, input: &GetObjectRequest) -> Box<Future<Item=GetObjectOutput<D::Chunk>, Error=GetObjectError>> {
+    fn get_object(&self,
+                  input: &GetObjectRequest)
+                  -> Box<Future<Item = GetObjectOutput<D::Chunk>, Error = GetObjectError>> {
         let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
 
         let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
@@ -18257,155 +21306,3135 @@ impl<P, D> S3<D::Chunk> for S3Client<P, D>
         }
         request.set_params(params);
 
+
         match self.credentials_provider.credentials() {
             Err(err) => {
                 return Box::new(future::err(err.into()));
-            },
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       let mut result = GetObjectOutput::default();
+                                       result.body = Some(StreamingBody(response_body));
+                                       if let Some(accept_ranges) =
+                response_headers.get("accept-ranges") {
+                                           let value = accept_ranges.to_owned();
+                                           result.accept_ranges = Some(value)
+                                       };
+                                       if let Some(cache_control) =
+                response_headers.get("Cache-Control") {
+                                           let value = cache_control.to_owned();
+                                           result.cache_control = Some(value)
+                                       };
+                                       if let Some(content_disposition) =
+                response_headers.get("Content-Disposition") {
+                                           let value = content_disposition.to_owned();
+                                           result.content_disposition = Some(value)
+                                       };
+                                       if let Some(content_encoding) =
+                response_headers.get("Content-Encoding") {
+                                           let value = content_encoding.to_owned();
+                                           result.content_encoding = Some(value)
+                                       };
+                                       if let Some(content_language) =
+                response_headers.get("Content-Language") {
+                                           let value = content_language.to_owned();
+                                           result.content_language = Some(value)
+                                       };
+                                       if let Some(content_length) =
+                response_headers.get("Content-Length") {
+                                           let value = content_length.to_owned();
+                                           result.content_length =
+                                               Some(value.parse::<i64>().unwrap())
+                                       };
+                                       if let Some(content_range) =
+                response_headers.get("Content-Range") {
+                                           let value = content_range.to_owned();
+                                           result.content_range = Some(value)
+                                       };
+                                       if let Some(content_type) =
+                response_headers.get("Content-Type") {
+                                           let value = content_type.to_owned();
+                                           result.content_type = Some(value)
+                                       };
+                                       if let Some(delete_marker) =
+                response_headers.get("x-amz-delete-marker") {
+                                           let value = delete_marker.to_owned();
+                                           result.delete_marker =
+                                               Some(value.parse::<bool>().unwrap())
+                                       };
+                                       if let Some(e_tag) = response_headers.get("ETag") {
+                                           let value = e_tag.to_owned();
+                                           result.e_tag = Some(value)
+                                       };
+                                       if let Some(expiration) =
+                response_headers.get("x-amz-expiration") {
+                                           let value = expiration.to_owned();
+                                           result.expiration = Some(value)
+                                       };
+                                       if let Some(expires) = response_headers.get("Expires") {
+                                           let value = expires.to_owned();
+                                           result.expires = Some(value)
+                                       };
+                                       if let Some(last_modified) =
+                response_headers.get("Last-Modified") {
+                                           let value = last_modified.to_owned();
+                                           result.last_modified = Some(value)
+                                       };
+                                       let mut values = ::std::collections::HashMap::new();
+                                       for (key, value) in response_headers.iter() {
+                                           if key.starts_with("x-amz-meta-") {
+                                               values.insert(key.replace("x-amz-meta-", ""),
+                                                             value.to_owned());
+                                           }
+                                       }
+                                       result.metadata = Some(values);
+                                       if let Some(missing_meta) =
+                response_headers.get("x-amz-missing-meta") {
+                                           let value = missing_meta.to_owned();
+                                           result.missing_meta = Some(value.parse::<i64>().unwrap())
+                                       };
+                                       if let Some(parts_count) =
+                response_headers.get("x-amz-mp-parts-count") {
+                                           let value = parts_count.to_owned();
+                                           result.parts_count = Some(value.parse::<i64>().unwrap())
+                                       };
+                                       if let Some(replication_status) =
+                response_headers.get("x-amz-replication-status") {
+                                           let value = replication_status.to_owned();
+                                           result.replication_status = Some(value)
+                                       };
+                                       if let Some(request_charged) =
+                response_headers.get("x-amz-request-charged") {
+                                           let value = request_charged.to_owned();
+                                           result.request_charged = Some(value)
+                                       };
+                                       if let Some(restore) =
+                response_headers.get("x-amz-restore") {
+                                           let value = restore.to_owned();
+                                           result.restore = Some(value)
+                                       };
+                                       if let Some(sse_customer_algorithm) =
+                response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                                           let value = sse_customer_algorithm.to_owned();
+                                           result.sse_customer_algorithm = Some(value)
+                                       };
+                                       if let Some(sse_customer_key_md5) =
+                response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                                           let value = sse_customer_key_md5.to_owned();
+                                           result.sse_customer_key_md5 = Some(value)
+                                       };
+                                       if let Some(ssekms_key_id) =
+                response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                                           let value = ssekms_key_id.to_owned();
+                                           result.ssekms_key_id = Some(value)
+                                       };
+                                       if let Some(server_side_encryption) =
+                response_headers.get("x-amz-server-side-encryption") {
+                                           let value = server_side_encryption.to_owned();
+                                           result.server_side_encryption = Some(value)
+                                       };
+                                       if let Some(storage_class) =
+                response_headers.get("x-amz-storage-class") {
+                                           let value = storage_class.to_owned();
+                                           result.storage_class = Some(value)
+                                       };
+                                       if let Some(tag_count) =
+                response_headers.get("x-amz-tagging-count") {
+                                           let value = tag_count.to_owned();
+                                           result.tag_count = Some(value.parse::<i64>().unwrap())
+                                       };
+                                       if let Some(version_id) =
+                response_headers.get("x-amz-version-id") {
+                                           let value = version_id.to_owned();
+                                           result.version_id = Some(value)
+                                       };
+                                       if let Some(website_redirect_location) =
+                response_headers.get("x-amz-website-redirect-location") {
+                                           let value = website_redirect_location.to_owned();
+                                           result.website_redirect_location = Some(value)
+                                       };
+                                       future::Either::A(future::ok(result))
+
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the access control list (ACL) of an object."]
+    #[allow(unused_variables, warnings)]
+    fn get_object_acl(&self,
+                      input: &GetObjectAclRequest)
+                      -> Box<Future<Item = GetObjectAclOutput, Error = GetObjectAclError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        params.put_key("acl");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetObjectAclOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(GetObjectAclOutputDeserializer::deserialize(&actual_tag_name,
+                                                                              &mut stack));
+                }
+
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetObjectAclError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns the tag-set of an object."]
+    #[allow(unused_variables, warnings)]
+    fn get_object_tagging
+        (&self,
+         input: &GetObjectTaggingRequest)
+         -> Box<Future<Item = GetObjectTaggingOutput, Error = GetObjectTaggingError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        params.put_key("tagging");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = GetObjectTaggingOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(GetObjectTaggingOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetObjectTaggingError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Return torrent files from a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn get_object_torrent
+        (&self,
+         input: &GetObjectTorrentRequest)
+         -> Box<Future<Item = GetObjectTorrentOutput<D::Chunk>, Error = GetObjectTorrentError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("torrent");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       let mut result = GetObjectTorrentOutput::default();
+                                       result.body = Some(StreamingBody(response_body));
+                                       if let Some(request_charged) =
+                response_headers.get("x-amz-request-charged") {
+                                           let value = request_charged.to_owned();
+                                           result.request_charged = Some(value)
+                                       };
+                                       future::Either::A(future::ok(result))
+
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(GetObjectTorrentError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="This operation is useful to determine if a bucket exists and you have permission to access it."]
+    #[allow(unused_variables, warnings)]
+    fn head_bucket(&self,
+                   input: &HeadBucketRequest)
+                   -> Box<Future<Item = (), Error = HeadBucketError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("HEAD", "s3", &self.region, &request_uri);
+
+
+
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(HeadBucketError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="The HEAD operation retrieves metadata from an object without returning the object itself. This operation is useful if you're only interested in an object's metadata. To use HEAD, you must have READ access to the object."]
+    #[allow(unused_variables, warnings)]
+    fn head_object(&self,
+                   input: &HeadObjectRequest)
+                   -> Box<Future<Item = HeadObjectOutput, Error = HeadObjectError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("HEAD", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref if_match) = input.if_match {
+            request.add_header("If-Match", &if_match.to_string());
+        }
+
+        if let Some(ref if_modified_since) = input.if_modified_since {
+            request.add_header("If-Modified-Since", &if_modified_since.to_string());
+        }
+
+        if let Some(ref if_none_match) = input.if_none_match {
+            request.add_header("If-None-Match", &if_none_match.to_string());
+        }
+
+        if let Some(ref if_unmodified_since) = input.if_unmodified_since {
+            request.add_header("If-Unmodified-Since", &if_unmodified_since.to_string());
+        }
+
+        if let Some(ref range) = input.range {
+            request.add_header("Range", &range.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+
+        if let Some(ref sse_customer_algorithm) = input.sse_customer_algorithm {
+            request.add_header("x-amz-server-side-encryption-customer-algorithm",
+                               &sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref sse_customer_key) = input.sse_customer_key {
+            request.add_header("x-amz-server-side-encryption-customer-key",
+                               &sse_customer_key.to_string());
+        }
+
+        if let Some(ref sse_customer_key_md5) = input.sse_customer_key_md5 {
+            request.add_header("x-amz-server-side-encryption-customer-key-MD5",
+                               &sse_customer_key_md5.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.part_number {
+            params.put("partNumber", x);
+        }
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = HeadObjectOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(HeadObjectOutputDeserializer::deserialize(&actual_tag_name,
+                                                                            &mut stack));
+                }
+
+                if let Some(accept_ranges) = response_headers.get("accept-ranges") {
+                    let value = accept_ranges.to_owned();
+                    result.accept_ranges = Some(value)
+                };
+                if let Some(cache_control) = response_headers.get("Cache-Control") {
+                    let value = cache_control.to_owned();
+                    result.cache_control = Some(value)
+                };
+                if let Some(content_disposition) = response_headers.get("Content-Disposition") {
+                    let value = content_disposition.to_owned();
+                    result.content_disposition = Some(value)
+                };
+                if let Some(content_encoding) = response_headers.get("Content-Encoding") {
+                    let value = content_encoding.to_owned();
+                    result.content_encoding = Some(value)
+                };
+                if let Some(content_language) = response_headers.get("Content-Language") {
+                    let value = content_language.to_owned();
+                    result.content_language = Some(value)
+                };
+                if let Some(content_length) = response_headers.get("Content-Length") {
+                    let value = content_length.to_owned();
+                    result.content_length = Some(value.parse::<i64>().unwrap())
+                };
+                if let Some(content_type) = response_headers.get("Content-Type") {
+                    let value = content_type.to_owned();
+                    result.content_type = Some(value)
+                };
+                if let Some(delete_marker) = response_headers.get("x-amz-delete-marker") {
+                    let value = delete_marker.to_owned();
+                    result.delete_marker = Some(value.parse::<bool>().unwrap())
+                };
+                if let Some(e_tag) = response_headers.get("ETag") {
+                    let value = e_tag.to_owned();
+                    result.e_tag = Some(value)
+                };
+                if let Some(expiration) = response_headers.get("x-amz-expiration") {
+                    let value = expiration.to_owned();
+                    result.expiration = Some(value)
+                };
+                if let Some(expires) = response_headers.get("Expires") {
+                    let value = expires.to_owned();
+                    result.expires = Some(value)
+                };
+                if let Some(last_modified) = response_headers.get("Last-Modified") {
+                    let value = last_modified.to_owned();
+                    result.last_modified = Some(value)
+                };
+                let mut values = ::std::collections::HashMap::new();
+                for (key, value) in response_headers.iter() {
+                    if key.starts_with("x-amz-meta-") {
+                        values.insert(key.replace("x-amz-meta-", ""), value.to_owned());
+                    }
+                }
+                result.metadata = Some(values);
+                if let Some(missing_meta) = response_headers.get("x-amz-missing-meta") {
+                    let value = missing_meta.to_owned();
+                    result.missing_meta = Some(value.parse::<i64>().unwrap())
+                };
+                if let Some(parts_count) = response_headers.get("x-amz-mp-parts-count") {
+                    let value = parts_count.to_owned();
+                    result.parts_count = Some(value.parse::<i64>().unwrap())
+                };
+                if let Some(replication_status) =
+                    response_headers.get("x-amz-replication-status") {
+                    let value = replication_status.to_owned();
+                    result.replication_status = Some(value)
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                if let Some(restore) = response_headers.get("x-amz-restore") {
+                    let value = restore.to_owned();
+                    result.restore = Some(value)
+                };
+                if let Some(sse_customer_algorithm) =
+                    response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                    let value = sse_customer_algorithm.to_owned();
+                    result.sse_customer_algorithm = Some(value)
+                };
+                if let Some(sse_customer_key_md5) =
+                    response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                    let value = sse_customer_key_md5.to_owned();
+                    result.sse_customer_key_md5 = Some(value)
+                };
+                if let Some(ssekms_key_id) =
+                    response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                };
+                if let Some(server_side_encryption) =
+                    response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                };
+                if let Some(storage_class) = response_headers.get("x-amz-storage-class") {
+                    let value = storage_class.to_owned();
+                    result.storage_class = Some(value)
+                };
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                if let Some(website_redirect_location) =
+                    response_headers.get("x-amz-website-redirect-location") {
+                    let value = website_redirect_location.to_owned();
+                    result.website_redirect_location = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(HeadObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Lists the analytics configurations for the bucket."]
+    #[allow(unused_variables, warnings)]
+fn list_bucket_analytics_configurations(&self, input: &ListBucketAnalyticsConfigurationsRequest) -> Box<Future<Item=ListBucketAnalyticsConfigurationsOutput, Error=ListBucketAnalyticsConfigurationsError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.continuation_token {
+            params.put("continuation-token", x);
+        }
+        params.put_key("analytics");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
             Ok(credentials) => {
                 request.sign(&credentials);
             }
         };
 
         Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
-            match response.status {
-                StatusCode::Ok |
-                StatusCode::NoContent |
-                StatusCode::PartialContent => {
-                    let mut result = GetObjectOutput::default();
-                    result.body = Some(StreamingBody(Box::new(response.body.map_err(|err| err.into()))));
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
 
-                    if let Some(accept_ranges) = response.headers.get("accept-ranges") {
-                        let value = accept_ranges.to_owned();
-                        result.accept_ranges = Some(value)
-                    };
-                    if let Some(cache_control) = response.headers.get("Cache-Control") {
-                        let value = cache_control.to_owned();
-                        result.cache_control = Some(value)
-                    };
-                    if let Some(content_disposition) = response.headers.get("Content-Disposition") {
-                        let value = content_disposition.to_owned();
-                        result.content_disposition = Some(value)
-                    };
-                    if let Some(content_encoding) = response.headers.get("Content-Encoding") {
-                        let value = content_encoding.to_owned();
-                        result.content_encoding = Some(value)
-                    };
-                    if let Some(content_language) = response.headers.get("Content-Language") {
-                        let value = content_language.to_owned();
-                        result.content_language = Some(value)
-                    };
-                    if let Some(content_length) = response.headers.get("Content-Length") {
-                        let value = content_length.to_owned();
-                        result.content_length = Some(value.parse::<i64>().unwrap())
-                    };
-                    if let Some(content_range) = response.headers.get("Content-Range") {
-                        let value = content_range.to_owned();
-                        result.content_range = Some(value)
-                    };
-                    if let Some(content_type) = response.headers.get("Content-Type") {
-                        let value = content_type.to_owned();
-                        result.content_type = Some(value)
-                    };
-                    if let Some(delete_marker) = response.headers.get("x-amz-delete-marker") {
-                        let value = delete_marker.to_owned();
-                        result.delete_marker = Some(value.parse::<bool>().unwrap())
-                    };
-                    if let Some(e_tag) = response.headers.get("ETag") {
-                        let value = e_tag.to_owned();
-                        result.e_tag = Some(value)
-                    };
-                    if let Some(expiration) = response.headers.get("x-amz-expiration") {
-                        let value = expiration.to_owned();
-                        result.expiration = Some(value)
-                    };
-                    if let Some(expires) = response.headers.get("Expires") {
-                        let value = expires.to_owned();
-                        result.expires = Some(value)
-                    };
-                    if let Some(last_modified) = response.headers.get("Last-Modified") {
-                        let value = last_modified.to_owned();
-                        result.last_modified = Some(value)
-                    };
-                    let mut values = ::std::collections::HashMap::new();
-                    for (key, value) in response.headers.iter() {
-                        if key.starts_with("x-amz-meta-") {
-                            values.insert(key.replace("x-amz-meta-", ""), value.to_owned());
-                        }
-                    }
-                    result.metadata = Some(values);
-                    if let Some(missing_meta) = response.headers.get("x-amz-missing-meta") {
-                        let value = missing_meta.to_owned();
-                        result.missing_meta = Some(value.parse::<i64>().unwrap())
-                    };
-                    if let Some(parts_count) = response.headers.get("x-amz-mp-parts-count") {
-                        let value = parts_count.to_owned();
-                        result.parts_count = Some(value.parse::<i64>().unwrap())
-                    };
-                    if let Some(replication_status) =
-                    response.headers.get("x-amz-replication-status") {
-                        let value = replication_status.to_owned();
-                        result.replication_status = Some(value)
-                    };
-                    if let Some(request_charged) = response.headers.get("x-amz-request-charged") {
-                        let value = request_charged.to_owned();
-                        result.request_charged = Some(value)
-                    };
-                    if let Some(restore) = response.headers.get("x-amz-restore") {
-                        let value = restore.to_owned();
-                        result.restore = Some(value)
-                    };
-                    if let Some(sse_customer_algorithm) =
-                    response
-                        .headers
-                        .get("x-amz-server-side-encryption-customer-algorithm") {
-                        let value = sse_customer_algorithm.to_owned();
-                        result.sse_customer_algorithm = Some(value)
-                    };
-                    if let Some(sse_customer_key_md5) =
-                    response
-                        .headers
-                        .get("x-amz-server-side-encryption-customer-key-MD5") {
-                        let value = sse_customer_key_md5.to_owned();
-                        result.sse_customer_key_md5 = Some(value)
-                    };
-                    if let Some(ssekms_key_id) =
-                    response
-                        .headers
-                        .get("x-amz-server-side-encryption-aws-kms-key-id") {
-                        let value = ssekms_key_id.to_owned();
-                        result.ssekms_key_id = Some(value)
-                    };
-                    if let Some(server_side_encryption) =
-                    response.headers.get("x-amz-server-side-encryption") {
-                        let value = server_side_encryption.to_owned();
-                        result.server_side_encryption = Some(value)
-                    };
-                    if let Some(storage_class) = response.headers.get("x-amz-storage-class") {
-                        let value = storage_class.to_owned();
-                        result.storage_class = Some(value)
-                    };
-                    if let Some(tag_count) = response.headers.get("x-amz-tagging-count") {
-                        let value = tag_count.to_owned();
-                        result.tag_count = Some(value.parse::<i64>().unwrap())
-                    };
-                    if let Some(version_id) = response.headers.get("x-amz-version-id") {
-                        let value = version_id.to_owned();
-                        result.version_id = Some(value)
-                    };
-                    if let Some(website_redirect_location) =
-                    response.headers.get("x-amz-website-redirect-location") {
-                        let value = website_redirect_location.to_owned();
-                        result.website_redirect_location = Some(value)
-                    };
-                    future::Either::A(future::ok(result))
-                }
-                _ => {
-                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
-                        Err(GetObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
-                    }))
-                }
+            if body.as_ref().is_empty() {
+                result = ListBucketAnalyticsConfigurationsOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(ListBucketAnalyticsConfigurationsOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
             }
+
+            
+            Ok(result)
         }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(ListBucketAnalyticsConfigurationsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns a list of inventory configurations for the bucket."]
+    #[allow(unused_variables, warnings)]
+fn list_bucket_inventory_configurations(&self, input: &ListBucketInventoryConfigurationsRequest) -> Box<Future<Item=ListBucketInventoryConfigurationsOutput, Error=ListBucketInventoryConfigurationsError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.continuation_token {
+            params.put("continuation-token", x);
+        }
+        params.put_key("inventory");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = ListBucketInventoryConfigurationsOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(ListBucketInventoryConfigurationsOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(ListBucketInventoryConfigurationsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Lists the metrics configurations for the bucket."]
+    #[allow(unused_variables, warnings)]
+fn list_bucket_metrics_configurations(&self, input: &ListBucketMetricsConfigurationsRequest) -> Box<Future<Item=ListBucketMetricsConfigurationsOutput, Error=ListBucketMetricsConfigurationsError>>{
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.continuation_token {
+            params.put("continuation-token", x);
+        }
+        params.put_key("metrics");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    
+        future::Either::A(response_body.map_err(|err| err.into()).concat2().and_then(move |body| {
+            let mut result;
+
+            if body.as_ref().is_empty() {
+                result = ListBucketMetricsConfigurationsOutput::default();
+            } else {
+                let reader = EventReader::new_with_config(
+                    body.as_ref(),
+                    ParserConfig::new().trim_whitespace(true)
+                );
+                let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                let _start_document = stack.next();
+                let actual_tag_name = try!(peek_at_name(&mut stack));
+                result = try!(ListBucketMetricsConfigurationsOutputDeserializer::deserialize(&actual_tag_name, &mut stack));
+            }
+
+            
+            Ok(result)
+        }))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(ListBucketMetricsConfigurationsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Returns a list of all buckets owned by the authenticated sender of the request."]
+    #[allow(unused_variables, warnings)]
+    fn list_buckets(&self) -> Box<Future<Item = ListBucketsOutput, Error = ListBucketsError>> {
+        let request_uri = "/";
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = ListBucketsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(ListBucketsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(ListBucketsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="This operation lists in-progress multipart uploads."]
+    #[allow(unused_variables, warnings)]
+    fn list_multipart_uploads
+        (&self,
+         input: &ListMultipartUploadsRequest)
+         -> Box<Future<Item = ListMultipartUploadsOutput, Error = ListMultipartUploadsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.delimiter {
+            params.put("delimiter", x);
+        }
+        if let Some(ref x) = input.encoding_type {
+            params.put("encoding-type", x);
+        }
+        if let Some(ref x) = input.key_marker {
+            params.put("key-marker", x);
+        }
+        if let Some(ref x) = input.max_uploads {
+            params.put("max-uploads", x);
+        }
+        if let Some(ref x) = input.prefix {
+            params.put("prefix", x);
+        }
+        if let Some(ref x) = input.upload_id_marker {
+            params.put("upload-id-marker", x);
+        }
+        params.put_key("uploads");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = ListMultipartUploadsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(ListMultipartUploadsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                                 &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(ListMultipartUploadsError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                         .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns metadata about all of the versions of objects in a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn list_object_versions
+        (&self,
+         input: &ListObjectVersionsRequest)
+         -> Box<Future<Item = ListObjectVersionsOutput, Error = ListObjectVersionsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        if let Some(ref x) = input.delimiter {
+            params.put("delimiter", x);
+        }
+        if let Some(ref x) = input.encoding_type {
+            params.put("encoding-type", x);
+        }
+        if let Some(ref x) = input.key_marker {
+            params.put("key-marker", x);
+        }
+        if let Some(ref x) = input.max_keys {
+            params.put("max-keys", x);
+        }
+        if let Some(ref x) = input.prefix {
+            params.put("prefix", x);
+        }
+        if let Some(ref x) = input.version_id_marker {
+            params.put("version-id-marker", x);
+        }
+        params.put_key("versions");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = ListObjectVersionsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(ListObjectVersionsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                               &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(ListObjectVersionsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn list_objects(&self,
+                    input: &ListObjectsRequest)
+                    -> Box<Future<Item = ListObjectsOutput, Error = ListObjectsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.delimiter {
+            params.put("delimiter", x);
+        }
+        if let Some(ref x) = input.encoding_type {
+            params.put("encoding-type", x);
+        }
+        if let Some(ref x) = input.marker {
+            params.put("marker", x);
+        }
+        if let Some(ref x) = input.max_keys {
+            params.put("max-keys", x);
+        }
+        if let Some(ref x) = input.prefix {
+            params.put("prefix", x);
+        }
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = ListObjectsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(ListObjectsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(ListObjectsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Returns some or all (up to 1000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. Note: ListObjectsV2 is the revised List Objects API and we recommend you use this revised API for new application development."]
+    #[allow(unused_variables, warnings)]
+    fn list_objects_v2(&self,
+                       input: &ListObjectsV2Request)
+                       -> Box<Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.continuation_token {
+            params.put("continuation-token", x);
+        }
+        if let Some(ref x) = input.delimiter {
+            params.put("delimiter", x);
+        }
+        if let Some(ref x) = input.encoding_type {
+            params.put("encoding-type", x);
+        }
+        if let Some(ref x) = input.fetch_owner {
+            params.put("fetch-owner", x);
+        }
+        if let Some(ref x) = input.max_keys {
+            params.put("max-keys", x);
+        }
+        if let Some(ref x) = input.prefix {
+            params.put("prefix", x);
+        }
+        if let Some(ref x) = input.start_after {
+            params.put("start-after", x);
+        }
+        params.put("list-type", "2");
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = ListObjectsV2Output::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(ListObjectsV2OutputDeserializer::deserialize(&actual_tag_name,
+                                                                               &mut stack));
+                }
+
+
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(ListObjectsV2Error::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Lists the parts that have been uploaded for a specific multipart upload."]
+    #[allow(unused_variables, warnings)]
+    fn list_parts(&self,
+                  input: &ListPartsRequest)
+                  -> Box<Future<Item = ListPartsOutput, Error = ListPartsError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("GET", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.max_parts {
+            params.put("max-parts", x);
+        }
+        if let Some(ref x) = input.part_number_marker {
+            params.put("part-number-marker", x);
+        }
+        params.put("uploadId", &input.upload_id);
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = ListPartsOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(ListPartsOutputDeserializer::deserialize(&actual_tag_name,
+                                                                           &mut stack));
+                }
+
+                if let Some(abort_date) = response_headers.get("x-amz-abort-date") {
+                    let value = abort_date.to_owned();
+                    result.abort_date = Some(value)
+                };
+                if let Some(abort_rule_id) = response_headers.get("x-amz-abort-rule-id") {
+                    let value = abort_rule_id.to_owned();
+                    result.abort_rule_id = Some(value)
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(ListPartsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets the accelerate configuration of an existing bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_accelerate_configuration
+        (&self,
+         input: &PutBucketAccelerateConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketAccelerateConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("accelerate");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        AccelerateConfigurationSerializer::serialize(&mut writer,
+                                                     "AccelerateConfiguration",
+                                                     &input.accelerate_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(PutBucketAccelerateConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Sets the permissions on a bucket using access control lists (ACL)."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_acl(&self,
+                      input: &PutBucketAclRequest)
+                      -> Box<Future<Item = (), Error = PutBucketAclError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref acl) = input.acl {
+            request.add_header("x-amz-acl", &acl.to_string());
+        }
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+
+        if let Some(ref grant_full_control) = input.grant_full_control {
+            request.add_header("x-amz-grant-full-control", &grant_full_control.to_string());
+        }
+
+        if let Some(ref grant_read) = input.grant_read {
+            request.add_header("x-amz-grant-read", &grant_read.to_string());
+        }
+
+        if let Some(ref grant_read_acp) = input.grant_read_acp {
+            request.add_header("x-amz-grant-read-acp", &grant_read_acp.to_string());
+        }
+
+        if let Some(ref grant_write) = input.grant_write {
+            request.add_header("x-amz-grant-write", &grant_write.to_string());
+        }
+
+        if let Some(ref grant_write_acp) = input.grant_write_acp {
+            request.add_header("x-amz-grant-write-acp", &grant_write_acp.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("acl");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        if input.access_control_policy.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            AccessControlPolicySerializer::serialize(&mut writer,
+                                                     "AccessControlPolicy",
+                                                     input.access_control_policy.as_ref().unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketAclError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets an analytics configuration for the bucket (specified by the analytics configuration ID)."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_analytics_configuration
+        (&self,
+         input: &PutBucketAnalyticsConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketAnalyticsConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("analytics");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        AnalyticsConfigurationSerializer::serialize(&mut writer,
+                                                    "AnalyticsConfiguration",
+                                                    &input.analytics_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(PutBucketAnalyticsConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Sets the cors configuration for a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_cors(&self,
+                       input: &PutBucketCorsRequest)
+                       -> Box<Future<Item = (), Error = PutBucketCorsError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("cors");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        CORSConfigurationSerializer::serialize(&mut writer,
+                                               "CORSConfiguration",
+                                               &input.cors_configuration);
+        payload = writer.into_inner();
+        let digest = md5::compute(&payload);
+        // need to deref digest and then pass that reference:
+        request.add_header("Content-MD5", &base64::encode(&(*digest)));
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketCorsError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Adds an inventory configuration (identified by the inventory ID) from the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_inventory_configuration
+        (&self,
+         input: &PutBucketInventoryConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketInventoryConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("inventory");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        InventoryConfigurationSerializer::serialize(&mut writer,
+                                                    "InventoryConfiguration",
+                                                    &input.inventory_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(PutBucketInventoryConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deprecated, see the PutBucketLifecycleConfiguration operation."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_lifecycle(&self,
+                            input: &PutBucketLifecycleRequest)
+                            -> Box<Future<Item = (), Error = PutBucketLifecycleError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("lifecycle");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        if input.lifecycle_configuration.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            LifecycleConfigurationSerializer::serialize(&mut writer,
+                                                        "LifecycleConfiguration",
+                                                        input
+                                                            .lifecycle_configuration
+                                                            .as_ref()
+                                                            .unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+        let digest = md5::compute(&payload);
+        // need to deref digest and then pass that reference:
+        request.add_header("Content-MD5", &base64::encode(&(*digest)));
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketLifecycleError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets lifecycle configuration for your bucket. If a lifecycle configuration exists, it replaces it."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_lifecycle_configuration
+        (&self,
+         input: &PutBucketLifecycleConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketLifecycleConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("lifecycle");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        if input.lifecycle_configuration.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            BucketLifecycleConfigurationSerializer::serialize(&mut writer,
+                                                              "LifecycleConfiguration",
+                                                              input
+                                                                  .lifecycle_configuration
+                                                                  .as_ref()
+                                                                  .unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+        let digest = md5::compute(&payload);
+        // need to deref digest and then pass that reference:
+        request.add_header("Content-MD5", &base64::encode(&(*digest)));
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(PutBucketLifecycleConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Set the logging parameters for a bucket and to specify permissions for who can view and modify the logging parameters. To set the logging status of a bucket, you must be the bucket owner."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_logging(&self,
+                          input: &PutBucketLoggingRequest)
+                          -> Box<Future<Item = (), Error = PutBucketLoggingError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("logging");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        BucketLoggingStatusSerializer::serialize(&mut writer,
+                                                 "BucketLoggingStatus",
+                                                 &input.bucket_logging_status);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketLoggingError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets a metrics configuration (specified by the metrics configuration ID) for the bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_metrics_configuration
+        (&self,
+         input: &PutBucketMetricsConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketMetricsConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put("id", &input.id);
+        params.put_key("metrics");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        MetricsConfigurationSerializer::serialize(&mut writer,
+                                                  "MetricsConfiguration",
+                                                  &input.metrics_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(PutBucketMetricsConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Deprecated, see the PutBucketNotificationConfiguraiton operation."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_notification(&self,
+                               input: &PutBucketNotificationRequest)
+                               -> Box<Future<Item = (), Error = PutBucketNotificationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("notification");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        NotificationConfigurationDeprecatedSerializer::serialize(&mut writer, "NotificationConfigurationDeprecated", &input.notification_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketNotificationError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                          .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Enables notifications of specified events for a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_notification_configuration
+        (&self,
+         input: &PutBucketNotificationConfigurationRequest)
+         -> Box<Future<Item = (), Error = PutBucketNotificationConfigurationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        let mut params = Params::new();
+        params.put_key("notification");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        NotificationConfigurationSerializer::serialize(&mut writer,
+                                                       "NotificationConfiguration",
+                                                       &input.notification_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {
+                            match response.status {
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    future::Either::A(future::ok(()))
+                                },
+                                _ => {
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {
+                                        Err(PutBucketNotificationConfigurationError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }))
+                                }
+                            }
+                        }))
+    }
+
+    #[doc="Replaces a policy on a bucket. If the bucket already has a policy, the one in this request completely replaces it."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_policy(&self,
+                         input: &PutBucketPolicyRequest)
+                         -> Box<Future<Item = (), Error = PutBucketPolicyError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("policy");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        PolicySerializer::serialize(&mut writer, "Policy", &input.policy);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketPolicyError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Creates a new replication configuration (or replaces an existing one, if present)."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_replication(&self,
+                              input: &PutBucketReplicationRequest)
+                              -> Box<Future<Item = (), Error = PutBucketReplicationError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("replication");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        ReplicationConfigurationSerializer::serialize(&mut writer,
+                                                      "ReplicationConfiguration",
+                                                      &input.replication_configuration);
+        payload = writer.into_inner();
+        let digest = md5::compute(&payload);
+        // need to deref digest and then pass that reference:
+        request.add_header("Content-MD5", &base64::encode(&(*digest)));
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketReplicationError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                         .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets the request payment configuration for a bucket. By default, the bucket owner pays for downloads from the bucket. This configuration parameter enables the bucket owner (only) to specify that the person requesting the download will be charged for the download. Documentation on requester pays buckets can be found at http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html"]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_request_payment
+        (&self,
+         input: &PutBucketRequestPaymentRequest)
+         -> Box<Future<Item = (), Error = PutBucketRequestPaymentError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("requestPayment");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        RequestPaymentConfigurationSerializer::serialize(&mut writer,
+                                                         "RequestPaymentConfiguration",
+                                                         &input.request_payment_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketRequestPaymentError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                            .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets the tags for a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_tagging(&self,
+                          input: &PutBucketTaggingRequest)
+                          -> Box<Future<Item = (), Error = PutBucketTaggingError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("tagging");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        TaggingSerializer::serialize(&mut writer, "Tagging", &input.tagging);
+        payload = writer.into_inner();
+        let digest = md5::compute(&payload);
+        // need to deref digest and then pass that reference:
+        request.add_header("Content-MD5", &base64::encode(&(*digest)));
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketTaggingError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets the versioning state of an existing bucket. To set the versioning state, you must be the bucket owner."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_versioning(&self,
+                             input: &PutBucketVersioningRequest)
+                             -> Box<Future<Item = (), Error = PutBucketVersioningError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+
+        if let Some(ref mfa) = input.mfa {
+            request.add_header("x-amz-mfa", &mfa.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("versioning");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        VersioningConfigurationSerializer::serialize(&mut writer,
+                                                     "VersioningConfiguration",
+                                                     &input.versioning_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketVersioningError::from_body(String::from_utf8_lossy(body.as_ref())
+                                                        .as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Set the website configuration for a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_bucket_website(&self,
+                          input: &PutBucketWebsiteRequest)
+                          -> Box<Future<Item = (), Error = PutBucketWebsiteError>> {
+        let request_uri = format!("/{bucket}", bucket = input.bucket);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put_key("website");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        WebsiteConfigurationSerializer::serialize(&mut writer,
+                                                  "WebsiteConfiguration",
+                                                  &input.website_configuration);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+                                       future::Either::A(future::ok(()))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutBucketWebsiteError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Adds an object to a bucket."]
+    #[allow(unused_variables, warnings)]
+    fn put_object(&self,
+                  input: &PutObjectRequest)
+                  -> Box<Future<Item = PutObjectOutput, Error = PutObjectError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref acl) = input.acl {
+            request.add_header("x-amz-acl", &acl.to_string());
+        }
+
+        if let Some(ref cache_control) = input.cache_control {
+            request.add_header("Cache-Control", &cache_control.to_string());
+        }
+
+        if let Some(ref content_disposition) = input.content_disposition {
+            request.add_header("Content-Disposition", &content_disposition.to_string());
+        }
+
+        if let Some(ref content_encoding) = input.content_encoding {
+            request.add_header("Content-Encoding", &content_encoding.to_string());
+        }
+
+        if let Some(ref content_language) = input.content_language {
+            request.add_header("Content-Language", &content_language.to_string());
+        }
+
+        if let Some(ref content_length) = input.content_length {
+            request.add_header("Content-Length", &content_length.to_string());
+        }
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+
+        if let Some(ref content_type) = input.content_type {
+            request.add_header("Content-Type", &content_type.to_string());
+        }
+
+        if let Some(ref expires) = input.expires {
+            request.add_header("Expires", &expires.to_string());
+        }
+
+        if let Some(ref grant_full_control) = input.grant_full_control {
+            request.add_header("x-amz-grant-full-control", &grant_full_control.to_string());
+        }
+
+        if let Some(ref grant_read) = input.grant_read {
+            request.add_header("x-amz-grant-read", &grant_read.to_string());
+        }
+
+        if let Some(ref grant_read_acp) = input.grant_read_acp {
+            request.add_header("x-amz-grant-read-acp", &grant_read_acp.to_string());
+        }
+
+        if let Some(ref grant_write_acp) = input.grant_write_acp {
+            request.add_header("x-amz-grant-write-acp", &grant_write_acp.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+
+        if let Some(ref sse_customer_algorithm) = input.sse_customer_algorithm {
+            request.add_header("x-amz-server-side-encryption-customer-algorithm",
+                               &sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref sse_customer_key) = input.sse_customer_key {
+            request.add_header("x-amz-server-side-encryption-customer-key",
+                               &sse_customer_key.to_string());
+        }
+
+        if let Some(ref sse_customer_key_md5) = input.sse_customer_key_md5 {
+            request.add_header("x-amz-server-side-encryption-customer-key-MD5",
+                               &sse_customer_key_md5.to_string());
+        }
+
+        if let Some(ref ssekms_key_id) = input.ssekms_key_id {
+            request.add_header("x-amz-server-side-encryption-aws-kms-key-id",
+                               &ssekms_key_id.to_string());
+        }
+
+        if let Some(ref server_side_encryption) = input.server_side_encryption {
+            request.add_header("x-amz-server-side-encryption",
+                               &server_side_encryption.to_string());
+        }
+
+        if let Some(ref storage_class) = input.storage_class {
+            request.add_header("x-amz-storage-class", &storage_class.to_string());
+        }
+
+        if let Some(ref tagging) = input.tagging {
+            request.add_header("x-amz-tagging", &tagging.to_string());
+        }
+
+        if let Some(ref website_redirect_location) = input.website_redirect_location {
+            request.add_header("x-amz-website-redirect-location",
+                               &website_redirect_location.to_string());
+        }
+
+        let mut payload: Vec<u8>;
+        payload = input.body.clone().unwrap();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = PutObjectOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(PutObjectOutputDeserializer::deserialize(&actual_tag_name,
+                                                                           &mut stack));
+                }
+
+                if let Some(e_tag) = response_headers.get("ETag") {
+                    let value = e_tag.to_owned();
+                    result.e_tag = Some(value)
+                };
+                if let Some(expiration) = response_headers.get("x-amz-expiration") {
+                    let value = expiration.to_owned();
+                    result.expiration = Some(value)
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                if let Some(sse_customer_algorithm) =
+                    response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                    let value = sse_customer_algorithm.to_owned();
+                    result.sse_customer_algorithm = Some(value)
+                };
+                if let Some(sse_customer_key_md5) =
+                    response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                    let value = sse_customer_key_md5.to_owned();
+                    result.sse_customer_key_md5 = Some(value)
+                };
+                if let Some(ssekms_key_id) =
+                    response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                };
+                if let Some(server_side_encryption) =
+                    response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                };
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="uses the acl subresource to set the access control list (ACL) permissions for an object that already exists in a bucket"]
+    #[allow(unused_variables, warnings)]
+    fn put_object_acl(&self,
+                      input: &PutObjectAclRequest)
+                      -> Box<Future<Item = PutObjectAclOutput, Error = PutObjectAclError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref acl) = input.acl {
+            request.add_header("x-amz-acl", &acl.to_string());
+        }
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+
+        if let Some(ref grant_full_control) = input.grant_full_control {
+            request.add_header("x-amz-grant-full-control", &grant_full_control.to_string());
+        }
+
+        if let Some(ref grant_read) = input.grant_read {
+            request.add_header("x-amz-grant-read", &grant_read.to_string());
+        }
+
+        if let Some(ref grant_read_acp) = input.grant_read_acp {
+            request.add_header("x-amz-grant-read-acp", &grant_read_acp.to_string());
+        }
+
+        if let Some(ref grant_write) = input.grant_write {
+            request.add_header("x-amz-grant-write", &grant_write.to_string());
+        }
+
+        if let Some(ref grant_write_acp) = input.grant_write_acp {
+            request.add_header("x-amz-grant-write-acp", &grant_write_acp.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        params.put_key("acl");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        if input.access_control_policy.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            AccessControlPolicySerializer::serialize(&mut writer,
+                                                     "AccessControlPolicy",
+                                                     input.access_control_policy.as_ref().unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = PutObjectAclOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(PutObjectAclOutputDeserializer::deserialize(&actual_tag_name,
+                                                                              &mut stack));
+                }
+
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutObjectAclError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Sets the supplied tag-set to an object that already exists in a bucket"]
+    #[allow(unused_variables, warnings)]
+    fn put_object_tagging
+        (&self,
+         input: &PutObjectTaggingRequest)
+         -> Box<Future<Item = PutObjectTaggingOutput, Error = PutObjectTaggingError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        params.put_key("tagging");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        let mut writer = EventWriter::new(Vec::new());
+        TaggingSerializer::serialize(&mut writer, "Tagging", &input.tagging);
+        payload = writer.into_inner();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = PutObjectTaggingOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result =
+                        try!(PutObjectTaggingOutputDeserializer::deserialize(&actual_tag_name,
+                                                                             &mut stack));
+                }
+
+                if let Some(version_id) = response_headers.get("x-amz-version-id") {
+                    let value = version_id.to_owned();
+                    result.version_id = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(PutObjectTaggingError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Restores an archived copy of an object back into Amazon S3"]
+    #[allow(unused_variables, warnings)]
+    fn restore_object(&self,
+                      input: &RestoreObjectRequest)
+                      -> Box<Future<Item = RestoreObjectOutput, Error = RestoreObjectError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("POST", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+        let mut params = Params::new();
+        if let Some(ref x) = input.version_id {
+            params.put("versionId", x);
+        }
+        params.put_key("restore");
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        if input.restore_request.is_some() {
+            let mut writer = EventWriter::new(Vec::new());
+            RestoreRequestSerializer::serialize(&mut writer,
+                                                "RestoreRequest",
+                                                input.restore_request.as_ref().unwrap());
+            payload = writer.into_inner();
+        } else {
+            payload = Vec::new();
+        }
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = RestoreObjectOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(RestoreObjectOutputDeserializer::deserialize(&actual_tag_name,
+                                                                               &mut stack));
+                }
+
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(RestoreObjectError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="<p>Uploads a part in a multipart upload.</p><p><b>Note:</b> After you initiate multipart upload and upload one or more parts, you must either complete or abort multipart upload in order to stop getting charged for storage of the uploaded parts. Only after you either complete or abort multipart upload, Amazon S3 frees up the parts storage and stops charging you for the parts storage.</p>"]
+    #[allow(unused_variables, warnings)]
+    fn upload_part(&self,
+                   input: &UploadPartRequest)
+                   -> Box<Future<Item = UploadPartOutput, Error = UploadPartError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+
+        if let Some(ref content_length) = input.content_length {
+            request.add_header("Content-Length", &content_length.to_string());
+        }
+
+        if let Some(ref content_md5) = input.content_md5 {
+            request.add_header("Content-MD5", &content_md5.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+
+        if let Some(ref sse_customer_algorithm) = input.sse_customer_algorithm {
+            request.add_header("x-amz-server-side-encryption-customer-algorithm",
+                               &sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref sse_customer_key) = input.sse_customer_key {
+            request.add_header("x-amz-server-side-encryption-customer-key",
+                               &sse_customer_key.to_string());
+        }
+
+        if let Some(ref sse_customer_key_md5) = input.sse_customer_key_md5 {
+            request.add_header("x-amz-server-side-encryption-customer-key-MD5",
+                               &sse_customer_key_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put("partNumber", &input.part_number);
+        params.put("uploadId", &input.upload_id);
+        request.set_params(params);
+        let mut payload: Vec<u8>;
+        payload = input.body.clone().unwrap();
+
+        request.set_payload(Some(payload));
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = UploadPartOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(UploadPartOutputDeserializer::deserialize(&actual_tag_name,
+                                                                            &mut stack));
+                }
+
+                if let Some(e_tag) = response_headers.get("ETag") {
+                    let value = e_tag.to_owned();
+                    result.e_tag = Some(value)
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                if let Some(sse_customer_algorithm) =
+                    response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                    let value = sse_customer_algorithm.to_owned();
+                    result.sse_customer_algorithm = Some(value)
+                };
+                if let Some(sse_customer_key_md5) =
+                    response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                    let value = sse_customer_key_md5.to_owned();
+                    result.sse_customer_key_md5 = Some(value)
+                };
+                if let Some(ssekms_key_id) =
+                    response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                };
+                if let Some(server_side_encryption) =
+                    response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(UploadPartError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
+    }
+
+    #[doc="Uploads a part by copying data from an existing object as data source."]
+    #[allow(unused_variables, warnings)]
+    fn upload_part_copy
+        (&self,
+         input: &UploadPartCopyRequest)
+         -> Box<Future<Item = UploadPartCopyOutput, Error = UploadPartCopyError>> {
+        let request_uri = format!("/{bucket}/{key}", bucket = input.bucket, key = input.key);
+
+        let mut request = SignedRequest::new("PUT", "s3", &self.region, &request_uri);
+
+        request.add_header("x-amz-copy-source", &input.copy_source);
+
+        if let Some(ref copy_source_if_match) = input.copy_source_if_match {
+            request.add_header("x-amz-copy-source-if-match",
+                               &copy_source_if_match.to_string());
+        }
+
+        if let Some(ref copy_source_if_modified_since) = input.copy_source_if_modified_since {
+            request.add_header("x-amz-copy-source-if-modified-since",
+                               &copy_source_if_modified_since.to_string());
+        }
+
+        if let Some(ref copy_source_if_none_match) = input.copy_source_if_none_match {
+            request.add_header("x-amz-copy-source-if-none-match",
+                               &copy_source_if_none_match.to_string());
+        }
+
+        if let Some(ref copy_source_if_unmodified_since) = input.copy_source_if_unmodified_since {
+            request.add_header("x-amz-copy-source-if-unmodified-since",
+                               &copy_source_if_unmodified_since.to_string());
+        }
+
+        if let Some(ref copy_source_range) = input.copy_source_range {
+            request.add_header("x-amz-copy-source-range", &copy_source_range.to_string());
+        }
+
+        if let Some(ref copy_source_sse_customer_algorithm) =
+            input.copy_source_sse_customer_algorithm {
+            request.add_header("x-amz-copy-source-server-side-encryption-customer-algorithm",
+                               &copy_source_sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref copy_source_sse_customer_key) = input.copy_source_sse_customer_key {
+            request.add_header("x-amz-copy-source-server-side-encryption-customer-key",
+                               &copy_source_sse_customer_key.to_string());
+        }
+
+        if let Some(ref copy_source_sse_customer_key_md5) = input.copy_source_sse_customer_key_md5 {
+            request.add_header("x-amz-copy-source-server-side-encryption-customer-key-MD5",
+                               &copy_source_sse_customer_key_md5.to_string());
+        }
+
+        if let Some(ref request_payer) = input.request_payer {
+            request.add_header("x-amz-request-payer", &request_payer.to_string());
+        }
+
+        if let Some(ref sse_customer_algorithm) = input.sse_customer_algorithm {
+            request.add_header("x-amz-server-side-encryption-customer-algorithm",
+                               &sse_customer_algorithm.to_string());
+        }
+
+        if let Some(ref sse_customer_key) = input.sse_customer_key {
+            request.add_header("x-amz-server-side-encryption-customer-key",
+                               &sse_customer_key.to_string());
+        }
+
+        if let Some(ref sse_customer_key_md5) = input.sse_customer_key_md5 {
+            request.add_header("x-amz-server-side-encryption-customer-key-MD5",
+                               &sse_customer_key_md5.to_string());
+        }
+        let mut params = Params::new();
+        params.put("partNumber", &input.part_number);
+        params.put("uploadId", &input.upload_id);
+        request.set_params(params);
+
+
+        match self.credentials_provider.credentials() {
+            Err(err) => {
+                return Box::new(future::err(err.into()));
+            }
+            Ok(credentials) => {
+                request.sign(&credentials);
+            }
+        };
+
+        Box::new(self.dispatcher
+                     .dispatch(request)
+                     .map_err(|err| err.into())
+                     .and_then(|response| match response.status {
+                                   StatusCode::Ok |
+                                   StatusCode::NoContent |
+                                   StatusCode::PartialContent => {
+                                       let response_status = response.status;
+                                       let response_headers = response.headers;
+                                       let response_body = response.body;
+
+                                       future::Either::A(response_body
+                                                             .map_err(|err| err.into())
+                                                             .concat2()
+                                                             .and_then(move |body| {
+                let mut result;
+
+                if body.as_ref().is_empty() {
+                    result = UploadPartCopyOutput::default();
+                } else {
+                    let reader = EventReader::new_with_config(body.as_ref(),
+                                                              ParserConfig::new()
+                                                                  .trim_whitespace(true));
+                    let mut stack = XmlResponse::new(reader.into_iter().peekable());
+                    let _start_document = stack.next();
+                    let actual_tag_name = try!(peek_at_name(&mut stack));
+                    result = try!(UploadPartCopyOutputDeserializer::deserialize(&actual_tag_name,
+                                                                                &mut stack));
+                }
+
+                if let Some(copy_source_version_id) =
+                    response_headers.get("x-amz-copy-source-version-id") {
+                    let value = copy_source_version_id.to_owned();
+                    result.copy_source_version_id = Some(value)
+                };
+                if let Some(request_charged) = response_headers.get("x-amz-request-charged") {
+                    let value = request_charged.to_owned();
+                    result.request_charged = Some(value)
+                };
+                if let Some(sse_customer_algorithm) =
+                    response_headers.get("x-amz-server-side-encryption-customer-algorithm") {
+                    let value = sse_customer_algorithm.to_owned();
+                    result.sse_customer_algorithm = Some(value)
+                };
+                if let Some(sse_customer_key_md5) =
+                    response_headers.get("x-amz-server-side-encryption-customer-key-MD5") {
+                    let value = sse_customer_key_md5.to_owned();
+                    result.sse_customer_key_md5 = Some(value)
+                };
+                if let Some(ssekms_key_id) =
+                    response_headers.get("x-amz-server-side-encryption-aws-kms-key-id") {
+                    let value = ssekms_key_id.to_owned();
+                    result.ssekms_key_id = Some(value)
+                };
+                if let Some(server_side_encryption) =
+                    response_headers.get("x-amz-server-side-encryption") {
+                    let value = server_side_encryption.to_owned();
+                    result.server_side_encryption = Some(value)
+                };
+                Ok(result)
+            }))
+                                   }
+                                   _ => {
+                                       future::Either::B(response
+                                                             .body
+                                                             .concat2()
+                                                             .map_err(|err| err.into())
+                                                             .and_then(|body| {
+            Err(UploadPartCopyError::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+        }))
+                                   }
+                               }))
     }
 }
 
