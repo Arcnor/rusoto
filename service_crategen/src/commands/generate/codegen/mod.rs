@@ -115,7 +115,7 @@ fn generate<P, E>(writer: &mut FileWriter,
 
         #[allow(warnings)]
         use futures::future;
-        use futures::{{Future, Stream}};
+        use futures::{{Future, Poll, Stream}};
         use hyper::StatusCode;
         use rusoto_core::request::DispatchSignedRequest;
         use rusoto_core::region;
@@ -148,7 +148,7 @@ fn generate_client<P>(writer: &mut FileWriter,
     // See https://github.com/rusoto/rusoto/issues/519
     writeln!(writer,
              "/// Trait representing the capabilities of the {service_name} API. {service_name} clients implement this trait.
-        pub trait {trait_name} {{
+        pub trait {trait_name}<D: DispatchSignedRequest> {{
         ",
              trait_name = service.service_type_name(),
              service_name = service.name())?;
@@ -176,7 +176,7 @@ fn generate_client<P>(writer: &mut FileWriter,
             }}
         }}
 
-        impl<P, D> {trait_name} for {type_name}<P, D> where P: ProvideAwsCredentials, D: DispatchSignedRequest, D::Chunk: Extend<<D::Chunk as IntoIterator>::Item> + IntoIterator + Default + AsRef<[u8]> + 'static {{
+        impl<P, D> {trait_name}<D> for {type_name}<P, D> where P: ProvideAwsCredentials, D: DispatchSignedRequest, D::Chunk: 'static {{
         ",
         service_name = service.name(),
         type_name = service.client_type_name(),
@@ -269,6 +269,10 @@ fn mutate_type_name(type_name: &str) -> String {
 
 // For types that will be used for streaming
 pub fn mutate_type_name_for_streaming(type_name: &str) -> String {
+    format!("Streaming{}<B>", type_name)
+}
+
+pub fn mutate_constructor_name_for_streaming(type_name: &str) -> String {
     format!("Streaming{}", type_name)
 }
 
@@ -313,25 +317,20 @@ fn generate_types<P>(writer: &mut FileWriter, service: &Service, protocol_genera
         if is_streaming_shape(service, name) {
             // Add a second type for streaming blobs, which are the only streaming type we can have
             writeln!(writer,
-                     "pub struct {streaming_name}(Box<Read>);
+                     "pub struct {streaming_name}(Box<Stream<Item=B, Error=HttpDispatchError> + Send>);
 
-                     impl fmt::Debug for {streaming_name} {{
+                     impl<B> fmt::Debug for {streaming_name} {{
                          fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {{
                              write!(f, \"<{name}: streaming content>\")
                          }}
                      }}
 
-                     impl ::std::ops::Deref for {streaming_name} {{
-                         type Target = Box<Read>;
+                     impl<B> Stream for {streaming_name} {{
+                         type Item = B;
+                         type Error = HttpDispatchError;
 
-                         fn deref(&self) -> &Box<Read> {{
-                             &self.0
-                         }}
-                     }}
-
-                     impl ::std::ops::DerefMut for {streaming_name} {{
-                         fn deref_mut(&mut self) -> &mut Box<Read> {{
-                             &mut self.0
+                         fn poll(&mut self) -> Poll<Option<B>, Self::Error> {{
+                             self.0.poll()
                          }}
                      }}",
                      name = type_name,
@@ -374,18 +373,20 @@ fn generate_struct<P>(service: &Service,
             name = name,
         )
     } else {
+        let is_streaming = has_streaming_member("Body", shape) && !is_input_shape(service, name);
         let struct_attributes =
             protocol_generator.generate_struct_attributes(serialized, deserialized);
         // Serde attributes are only needed if deriving the Serialize or Deserialize trait
         let need_serde_attrs = struct_attributes.contains("erialize");
         format!(
             "{attributes}
-            pub struct {name} {{
+            pub struct {name}{name_appendix} {{
                 {struct_fields}
             }}
             ",
             attributes = struct_attributes,
             name = name,
+            name_appendix = if is_streaming { "<B>" } else { "" },
             struct_fields = generate_struct_fields(service, shape, name, need_serde_attrs, protocol_generator),
         )
     }

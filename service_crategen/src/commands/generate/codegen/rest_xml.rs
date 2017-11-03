@@ -4,7 +4,7 @@ use inflector::Inflector;
 use ::Service;
 use botocore::{Member, Operation, Shape, ShapeType};
 use super::{xml_payload_parser, rest_response_parser, rest_request_generator, get_rust_type,
-            mutate_type_name};
+            mutate_type_name, has_streaming_member};
 use super::{GenerateProtocol, generate_field_name, error_type_name};
 use super::{IoResult, FileWriter};
 
@@ -13,12 +13,15 @@ pub struct RestXmlGenerator;
 impl GenerateProtocol for RestXmlGenerator {
     fn generate_method_signatures(&self, writer: &mut FileWriter, service: &Service) -> IoResult {
         for (operation_name, operation) in service.operations().iter() {
+            let is_streaming = operation.output.as_ref()
+                .map_or(false, |output| service.get_shape(&output.shape)
+                    .map_or(false, |shape| has_streaming_member("Body", shape)));
             writeln!(writer,"
                 {documentation}
                 {method_signature};
                 ",
                 documentation = generate_documentation(operation),
-                method_signature = generate_method_signature(operation_name, operation),
+                method_signature = generate_method_signature(operation_name, operation, is_streaming),
             )?
         }
         Ok(())
@@ -27,8 +30,15 @@ impl GenerateProtocol for RestXmlGenerator {
     fn generate_method_impls(&self, writer: &mut FileWriter, service: &Service) -> IoResult {
 
         for (operation_name, operation) in service.operations().iter() {
+            let is_streaming = operation.output.as_ref()
+                .map_or(false, |output| service.get_shape(&output.shape)
+                    .map_or(false, |shape| has_streaming_member("Body", shape)));
             let (request_uri, _) = rest_request_generator::parse_query_string(&operation.http
                 .request_uri);
+            let parse_non_payload =
+                rest_response_parser::generate_response_headers_parser(service,
+                                                                       operation)
+                    .unwrap_or_else(|| "".to_owned());
             writeln!(writer,
                      "{documentation}
                     #[allow(unused_variables, warnings)]
@@ -41,28 +51,36 @@ impl GenerateProtocol for RestXmlGenerator {
                         {set_parameters}
                         {build_payload}
 
-                        request.sign(&try!(self.credentials_provider.credentials()));
-
-                        let mut response = try!(self.dispatcher.dispatch(&request));
-
-                        match response.status {{
-                            StatusCode::Ok|StatusCode::NoContent|StatusCode::PartialContent => {{
-                                {parse_response_body}
-                                {parse_non_payload}
-                                Ok(result)
+                        match self.credentials_provider.credentials() {{
+                            Err(err) => {{
+                                return Box::new(future::err(err.into()));
                             }},
-                            _ => {{
-                                let mut body: Vec<u8> = Vec::new();
-                                try!(response.body.read_to_end(&mut body));
-                                Err({error_type}::from_body(String::from_utf8_lossy(&body).as_ref()))
+                            Ok(credentials) => {{
+                                request.sign(&credentials);
                             }}
-                        }}
+                        }};
+
+                        Box::new(self.dispatcher.dispatch(request).map_err(|err| err.into()).and_then(|response| {{
+                            match response.status {{
+                                StatusCode::Ok | StatusCode::NoContent | StatusCode::PartialContent => {{
+                                    let response_status = response.status;
+                                    let response_headers = response.headers;
+                                    let response_body = response.body;
+                                    {parse_response_body}
+                                }},
+                                _ => {{
+                                    future::Either::B(response.body.concat2().map_err(|err| err.into()).and_then(|body| {{
+                                        Err({error_type}::from_body(String::from_utf8_lossy(body.as_ref()).as_ref()))
+                                    }}))
+                                }}
+                            }}
+                        }}))
                     }}
                     ",
                      documentation = generate_documentation(operation),
                      http_method = &operation.http.method,
                      endpoint_prefix = service.endpoint_prefix(),
-                     method_signature = generate_method_signature(operation_name, operation),
+                     method_signature = generate_method_signature(operation_name, operation, is_streaming),
                      error_type = error_type_name(operation_name),
                      build_payload = generate_payload_serialization(service, operation)
                          .unwrap_or_else(|| "".to_string()),
@@ -76,12 +94,8 @@ impl GenerateProtocol for RestXmlGenerator {
                          rest_request_generator::generate_params_loading_string(service,
                                                                                 operation)
                              .unwrap_or_else(|| "".to_string()),
-                     parse_non_payload =
-                         rest_response_parser::generate_response_headers_parser(service,
-                                                                                operation)
-                             .unwrap_or_else(|| "".to_owned()),
                      parse_response_body =
-                         xml_payload_parser::generate_response_parser(service, operation, true))?;
+                         xml_payload_parser::generate_response_parser(service, operation, true, &parse_non_payload))?;
         }
         Ok(())
     }
@@ -259,21 +273,23 @@ fn generate_payload_member_serialization(shape: &Shape) -> String {
 
 }
 
-fn generate_method_signature(operation_name: &str, operation: &Operation) -> String {
+fn generate_method_signature(operation_name: &str, operation: &Operation, is_streaming: bool) -> String {
     if operation.input.is_some() {
         format!(
-            "fn {operation_name}(&self, input: &{input_type}) -> Result<{output_type}, {error_type}>",
+            "fn {operation_name}(&self, input: &{input_type}) -> Box<Future<Item={output_type}{output_type_appendix}, Error={error_type}>>",
             input_type = operation.input.as_ref().unwrap().shape,
             operation_name = operation_name.to_snake_case(),
             output_type = &operation.output_shape_or("()"),
+            output_type_appendix = if is_streaming { "<D::Chunk>" } else { "" },
             error_type = error_type_name(operation_name),
         )
     } else {
         format!(
-            "fn {operation_name}(&self) -> Result<{output_type}, {error_type}>",
+            "fn {operation_name}(&self) -> Box<Future<Item={output_type}{output_type_appendix}, Error={error_type}>>",
             operation_name = operation_name.to_snake_case(),
             error_type = error_type_name(operation_name),
             output_type = &operation.output_shape_or("()"),
+            output_type_appendix = if is_streaming { "<D::Chunk>" } else { "" }
         )
     }
 }

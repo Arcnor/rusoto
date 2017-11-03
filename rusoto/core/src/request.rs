@@ -80,17 +80,15 @@ impl From<IoError> for HttpDispatchError {
 
 ///Trait for implementing HTTP Request/Response
 pub trait DispatchSignedRequest {
-    /// The item of the response body stream
-    type Chunk;
-
+    /// TODO: docs
+    type Chunk: Extend<<Self::Chunk as IntoIterator>::Item> + IntoIterator + Default + AsRef<[u8]>;
     /// Dispatch Request, and then return a Response
     fn dispatch(&self, request: SignedRequest) -> Box<Future<Item=HttpResponse<Self::Chunk>, Error=HttpDispatchError>>;
 }
 
 impl<C: Connect> DispatchSignedRequest for Client<C> {
     type Chunk = HyperChunk;
-
-    fn dispatch(&self, request: SignedRequest) -> Box<Future<Item=HttpResponse<HyperChunk>, Error=HttpDispatchError>> {
+    fn dispatch(&self, request: SignedRequest) -> Box<Future<Item=HttpResponse<Self::Chunk>, Error=HttpDispatchError>> {
         let hyper_method = match request.method().as_ref() {
             "POST" => Method::Post,
             "PUT" => Method::Put,

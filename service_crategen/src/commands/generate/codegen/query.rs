@@ -59,7 +59,7 @@ impl GenerateProtocol for QueryGenerator {
                      http_method = &operation.http.method,
                      endpoint_prefix = service.endpoint_prefix(),
                      parse_payload =
-                         xml_payload_parser::generate_response_parser(service, operation, false),
+                         xml_payload_parser::generate_response_parser(service, operation, false, ""),
                      method_signature = generate_method_signature(operation_name, operation),
                      operation_name = &operation.name,
                      request_uri = &operation.http.request_uri,
